@@ -1,0 +1,148 @@
+/************************************
+** お問い合わせフォームの入力
+************************************/
+    h2{
+    margin: auto;
+    text-align: center;
+    }
+
+    .hidden{
+        display: none !important;
+    }
+
+    #CF7{
+    width: 800px;
+    margin: auto;
+    }
+    
+    #CF7 table{
+    width: 100%;
+    border-collapse: collapse;
+    border: solid #CCC;
+    border-width: 1px;
+    color: #444;
+    }
+    #CF7 table tr th,
+    #CF7 table tr td{
+    padding: 0.5em;
+    text-align: left;
+    vertical-align: top;
+    border: solid #CCC;
+    border-width: 1px;
+    vertical-align: middle;
+    }
+    #CF7 table tr th{
+    line-height: 200%;
+    width: 35%;
+    background: #eee;
+    }
+    @media screen and (max-width:1000px){
+    #CF7{
+    width: 100%;
+    }
+    
+    #CF7 table,
+    #CF7 table tbody,
+    #CF7 table tr,
+    #CF7 table tr th,
+    #CF7 table tr td{
+    display: block;
+    }
+    
+    #CF7 table{
+    width: 100%;
+    border-width: 0 0 1px 0;
+    }
+    
+    #CF7 table tr th,
+    #CF7 table tr td{
+    width: 100%;
+    padding: 3% 5%;
+    }
+    
+    #CF7 table tr td{
+    border-width: 0px 1px 0px 1px;
+    }
+    }
+    /*「必須」文字デザイン*/
+    .required{
+    font-size:.8em;
+    padding: 5px;
+    background: #F57500;
+    color: #fff;
+    border-radius: 3px;
+    margin-right: 5px;
+    }
+    
+    /*「任意」文字デザイン*/
+    .optional{
+    font-size:.8em;
+    padding: 5px;
+    background: #000080;
+    color: #fff;
+    border-radius: 3px;
+    margin-right: 5px;
+    }
+    
+    /* 入力項目を見やすく */
+    input,
+    textarea {
+        width: 90%;
+        padding: 8px 15px;
+        margin-right: 10px;
+        margin-top: 10px;
+        border: 1px solid #d0d5d8;
+        border-radius: 3px;
+        background-color: #eff1f5;
+        font-size: 16px;
+        font-family: inherit;
+    }
+    textarea {
+        height: 200px;
+    }
+    input[type=checkbox],
+    input[type=radio] {
+        transform: scale(2);
+        width: auto;
+        padding: 8px 15px;
+        margin-right: 10px;
+        margin-top: 10px;
+    }
+    select {
+        width: auto;
+        padding: 8px 15px;
+        margin-right: 10px;
+        margin-top: 10px;
+        font-size: medium;
+    }
+
+    /* 「送信する」ボタン */
+    input[type=submit] {
+        display: block;
+        padding: 15px;
+        width: 400px;
+        background: #ffaa56;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        border-radius: 2px;
+        margin: 15px auto 0
+    }
+    @media screen and (max-width:1000px){
+    input[type=submit] {
+    width: 250px;
+    }
+    }
+    
+    input[type=submit]:hover {
+        box-shadow: 0 15px 30px -5px rgba(0,0,0,.15), 0 0 5px rgba(0,0,0,.1);
+        transform: translateY(-4px);
+        opacity:0.7;
+    }
+    /* エラーメッセージを見やすく */
+    span.wpcf7-not-valid-tip,
+    .wpcf7-response-output.wpcf7-validation-errors,
+    .error {
+        color: red;
+        font-weight: 600;
+    }

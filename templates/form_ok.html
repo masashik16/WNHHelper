@@ -1,0 +1,57 @@
+<script type="text/javascript">
+    var submitted = false;
+    var currentURL = window.location.host;
+    const params = new URLSearchParams(location.search);
+    document.getElementsByID("discord_id")[0].value = params.get("discord_id");
+</script>
+  
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted) {window.location=currentURL + 'thanks.html';}"></iframe>
+<head>
+    <link href="form.css" rel="stylesheet" type="text/css" media="all">
+</head>
+<body>
+    <h2>
+        Google Form 転送用
+    </h2>
+  <form class="GF" action="https://docs.google.com/forms/(Googleフォームからコピペしてください)" target="hidden_iframe" onsubmit="submitted=true;">
+    <div id="CF7">
+        <table>
+
+            <tr>
+                <th><span class="required">必須</span> リスト</th>
+                <td>
+                    <select name="entry.(Googleフォームからコピペしてください)" id="contactType">
+                        <option data-value="TEST01" value="TEST01">TEST01</option>
+                        <option data-value="TEST02" value="TEST02">TEST02</option>
+
+                      </select>
+                </td>
+            </tr>
+
+            <tr>
+                <th><span class="required">必須</span> チェックボックス</th>
+                <td><label><input type="checkbox" id="discord_id" name="entry.(Googleフォームからコピペしてください)" ><span>チェックボックスA</span></label></td>
+            </tr>
+        
+            <tr>
+                <th><span class="required">必須</span> ラジオボタン</th>
+                <td><label><input type="radio" name="entry.(Googleフォームからコピペしてください)"  checked /><span>ラジオA</span></label></td>
+            </tr>
+                
+            <tr>
+                <th><span class="required">必須</span>メッセージ本文</th>
+                <td class="message-100"><textarea id="content" name="entry.(Googleフォームからコピペしてください)" required></textarea></td>
+            </tr>
+        
+            <tr class="a">
+                <th><span class="required">必須</span>Discord_ID</th>
+                <td><input type="text" id="discord_id" name="entry.(Googleフォームからコピペしてください)" required></td>
+            </tr>
+
+        </table>
+        </div>
+        <input type="submit" value="送信する">
+    </form>
+</body>
+
+

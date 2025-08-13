@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WNH CUP the 5th 選手申込キャンセルフォーム</title>
+        <link href="../static/css/form.css" rel="stylesheet" type="text/css" media="all">
+        <link 
+        rel="stylesheet"
+        href="{{url_for("static",filename="css/form.css")}}"
+        />
+        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    </head>
+    <body>
+        <h2>
+            WNH CUP the 5th 選手申込キャンセルフォーム
+        </h2>
+        <form class="GF" id="form" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSc-qc2G-7_Qyn_1SMsUKKiFA3uZ3zFO7imoqPyaO1pe-4_F2w/formResponse" target="hidden_iframe" onsubmit="submitted=true;">
+            <div id="CF7">
+
+                <input type="hidden" id="discord_id" name="entry.1481144203" data-error_place="#textError00" readonly>
+
+                <table>
+
+                    <br><span id="textError00"><!-- error message --></span>
+
+                    <tr>
+                        <th><span class="required">必須</span> Discord ユーザー名</th>
+                        <td>
+                            <input type="text" id="discord_username" name="entry.1811997867" data-error_place="#textError01" readonly>
+                            <br><span id="textError01"><!-- error message --></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th><span class="required">必須</span> IGN</th>
+                        <td>
+                            <input type="text" id="ign" name="entry.196013778" data-error_place="#textError02" readonly>
+                            <br><span id="textError02"><!-- error message --></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th><span class="required">必須</span> キャンセル確認</th>
+                        <td>
+                            <span>キャンセル申込後に再度申込を行う場合は運営チームへの連絡が必要です。<br>本当にキャンセルしてよろしいですか？<br></span>
+                            <label><input type="checkbox" class="check01" name="entry.853223821" value="はい" data-error_place="#textError03"><span>はい</span></label>
+                            <br><span id="textError03"><!-- error message --></span>
+                        </td>
+                    </tr>
+
+                </table>
+            </div>
+            <input type="submit" value="送信する">
+        </form>
+
+        <script type="text/javascript">
+            const currentURL = window.location.host;
+            const params = new URLSearchParams(location.search);
+            const discord_id_input = document.getElementById("discord_id")
+            const discord_username_input = document.getElementById("discord_username")
+            const ign_input = document.getElementById("ign")
+            const discord_id = {{ discord_id|tojson }}
+            const discord_username = {{ discord_username|tojson }}
+            const ign = {{ ign|tojson }}
+            discord_id_input.value = discord_id;
+            discord_username_input.value = discord_username;
+            ign_input.value = ign;
+            // 検証
+            $(document).ready(function(){
+                $("#form").validate({
+                    errorPlacement :function(error,element){
+                        error.appendTo(element.data("error_place"));
+                    }
+                });
+                $( "#discord_username" ).rules( "add", {
+                required: true,
+                discord_username_match:true,
+                messages: {
+                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+                }
+                });
+                $( "#ign" ).rules( "add", {
+                required: true,
+                ign_match:true,
+                messages: {
+                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+                }
+                });
+                $( ".check01" ).rules( "add", {
+                required: true,
+                messages: {
+                    required: "チェックしてください"
+                }
+                });
+                $( "#discord_id" ).rules( "add", {
+                required: true,
+                discord_id_match:true,
+                messages: {
+                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+                }
+                });
+                $.validator.addMethod(
+                "discord_id_match",
+                function (value, element) {
+                    return value == discord_id;
+                },
+                "認証エラーです。再度Discordのリンクからやりなおしてください"
+                );
+                $.validator.addMethod(
+                "discord_username_match",
+                function (value, element) {
+                    return value == discord_username;
+                },
+                "認証エラーです。再度Discordのリンクからやりなおしてください"
+                );
+                $.validator.addMethod(
+                "ign_match",
+                function (value, element) {
+                    return value == ign;
+                },
+                "認証エラーです。再度Discordのリンクからやりなおしてください"
+                );
+            });
+        </script>
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted){window.location='/thanks/'}"></iframe>
+    </body>
+</html> 
