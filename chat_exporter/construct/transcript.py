@@ -1,25 +1,21 @@
 import datetime
 import html
-import traceback
-import locale
-
 import re
+import traceback
 from typing import List, Optional
 
 import pytz
 
-from chat_exporter.construct.attachment_handler import AttachmentHandler
-from chat_exporter.ext.discord_import import discord
-
-from chat_exporter.construct.message import gather_messages
 from chat_exporter.construct.assets.component import Component
-
+from chat_exporter.construct.attachment_handler import AttachmentHandler
+from chat_exporter.construct.message import gather_messages
 from chat_exporter.ext.cache import clear_cache
-from chat_exporter.parse.mention import pass_bot
+from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     fill_out, total, channel_topic, meta_data_temp, fancy_time, channel_subject, PARSE_MODE_NONE, PARSE_MODE_HTML_SAFE
 )
+from chat_exporter.parse.mention import pass_bot
 
 
 class TranscriptDAO:

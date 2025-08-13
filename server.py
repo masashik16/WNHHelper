@@ -1,24 +1,23 @@
 import asyncio
-from datetime import datetime, timedelta
+import ipaddress
+import logging
 import os
 import re
-import requests
-
 from collections.abc import Awaitable, Callable, Coroutine
+from datetime import datetime, timedelta
+
+import pytz
+import requests
 from dotenv import load_dotenv
 from hypercorn.asyncio import serve
 from hypercorn.config import Config as HyperConfig
-import pytz
 from quart import abort, Quart, redirect, render_template, request, session
-
-from openid_wargaming.authentication import Authentication
-from openid_wargaming.verification import Verification
-import ipaddress
 
 import api
 import db
-import logging
 from logs import logger, handler
+from openid_wargaming.authentication import Authentication
+from openid_wargaming.verification import Verification
 
 load_dotenv()
 GUILD_ID = int(os.environ.get("GUILD_ID"))

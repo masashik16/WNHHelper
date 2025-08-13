@@ -1,106 +1,112 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <link href="../static/css/form.css" rel="stylesheet" type="text/css" media="all">
-        <link 
-        rel="stylesheet"
-        href="{{url_for("static",filename="css/form.css")}}"
-        />
-        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
-    </head>
-    <body>
-        <h2>
-            Google Form 転送用
-        </h2>
-        <form class="GF" id="form" action="https://docs.google.com/forms/u/0/d/e/(Googleフォームからコピペしてください)" target="hidden_iframe" onsubmit="submitted=true;">
-            <div id="CF7">
-                <table>
+<head>
+    <link href="../static/css/form.css" rel="stylesheet" type="text/css" media="all">
+    <link
+            rel="stylesheet"
+            href="{{url_for(" static
+    ",filename="css/form.css")}}"
+    />
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+</head>
+<body>
+<h2>
+    Google Form 転送用
+</h2>
+<form class="GF" id="form" action="https://docs.google.com/forms/u/0/d/e/(Googleフォームからコピペしてください)"
+      target="hidden_iframe" onsubmit="submitted=true;">
+    <div id="CF7">
+        <table>
 
-                    <tr>
-                        <th><span class="required">必須</span> チェックボックス</th>
-                        <td>
-                            <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
-                            <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
-                            <br><span id="textError"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> チェックボックス</th>
+                <td>
+                    <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
+                    <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
+                    <br><span id="textError"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> リスト</th>
-                        <td>
-                            <select name="entry.(Googleフォームからコピペしてください)" id="contactType">
-                                <option data-value="TEST01" value="TEST01">TEST01</option>
-                                <option data-value="TEST02" value="TEST02">TEST02</option>
-                            </select>
-                            <br><span id="textError00"><!-- error message --></span>
-                        </td>
-                    </tr>
-        
-                    <tr>
-                        <th><span class="required">必須</span> チェックボックス</th>
-                        <td>
-                            <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
-                            <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
-                            <br><span id="textError00"><!-- error message --></span>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <th><span class="required">必須</span> ラジオボタン</th>
-                        <td><label><input type="radio" name="entry.(Googleフォームからコピペしてください)"  checked /><span>ラジオA</span></label></td>
-                        <br><span id="textError00"><!-- error message --></span>
-                    </tr>
-                        
-                    <tr>
-                        <th><span class="required">必須</span>メッセージ本文</th>
-                        <td class="message-100"><textarea id="content" name="entry.(Googleフォームからコピペしてください)" required></textarea></td>
-                        <br><span id="textError00"><!-- error message --></span>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> リスト</th>
+                <td>
+                    <select name="entry.(Googleフォームからコピペしてください)" id="contactType">
+                        <option data-value="TEST01" value="TEST01">TEST01</option>
+                        <option data-value="TEST02" value="TEST02">TEST02</option>
+                    </select>
+                    <br><span id="textError00"><!-- error message --></span>
+                </td>
+            </tr>
 
-                        <input type="text" id="discord_id" name="entry.315111777" value="discord_id"  data-error_place="#textError2" readonly>
-                        <br><span id="textError00"><!-- error message --></span>
+            <tr>
+                <th><span class="required">必須</span> チェックボックス</th>
+                <td>
+                    <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
+                    <label><input type="checkbox" class="check1" name="entry" data-error_place="#textError"><span>チェックボックスA</span></label>
+                    <br><span id="textError00"><!-- error message --></span>
+                </td>
+            </tr>
 
-                </table>
-            </div>
-            <input type="submit" value="送信するab">
-        </form>
+            <tr>
+                <th><span class="required">必須</span> ラジオボタン</th>
+                <td><label><input type="radio" name="entry.(Googleフォームからコピペしてください)"
+                                  checked/><span>ラジオA</span></label></td>
+                <br><span id="textError00"><!-- error message --></span>
+            </tr>
 
-        <script type="text/javascript">
-            var currentURL = window.location.host;
-            const params = new URLSearchParams(location.search);
-            var discord_id_input = document.getElementById("discord_id")
-            var discord_id = {{ discord_id|tojson }}
-            discord_id_input.value = discord_id;
-            // 検証
-            $(document).ready(function(){
-                $("#form").validate({
-                    errorPlacement :function(error,element){
-                        error.appendTo(element.data("error_place"));
-                    }
-                });
-                $( ".check1" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ以上選択してください"
-                }
-                });
-                $( "#discord_id" ).rules( "add", {
-                required: true,
-                discord_match:true,
-                messages: {
-                    required: "Discord認証エラーです。再度Discordのリンクからやりなおしてください。"
-                }
-                });
-                $.validator.addMethod(
-                "discord_match",
-                function (value, element) {
-                    return value == discord_id;
-                },
-                "Discord認証エラーです。再度Discordのリンクからやりなおしてください。"
-                );
-            });
-        </script>
-        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted){window.location='/form_ok/?discord_id=' + discord_id;}"></iframe>
-    </body>
+            <tr>
+                <th><span class="required">必須</span>メッセージ本文</th>
+                <td class="message-100"><textarea id="content" name="entry.(Googleフォームからコピペしてください)"
+                                                  required></textarea></td>
+                <br><span id="textError00"><!-- error message --></span>
+            </tr>
+
+            <input type="text" id="discord_id" name="entry.315111777" value="discord_id" data-error_place="#textError2"
+                   readonly>
+            <br><span id="textError00"><!-- error message --></span>
+
+        </table>
+    </div>
+    <input type="submit" value="送信するab">
+</form>
+
+<script type="text/javascript">
+    var currentURL = window.location.host;
+    const params = new URLSearchParams(location.search);
+    var discord_id_input = document.getElementById("discord_id")
+    var discord_id = {{ discord_id|tojson }}
+    discord_id_input.value = discord_id;
+    // 検証
+    $(document).ready(function(){
+        $("#form").validate({
+            errorPlacement :function(error,element){
+                error.appendTo(element.data("error_place"));
+            }
+        });
+        $( ".check1" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ以上選択してください"
+        }
+        });
+        $( "#discord_id" ).rules( "add", {
+        required: true,
+        discord_match:true,
+        messages: {
+            required: "Discord認証エラーです。再度Discordのリンクからやりなおしてください。"
+        }
+        });
+        $.validator.addMethod(
+        "discord_match",
+        function (value, element) {
+            return value == discord_id;
+        },
+        "Discord認証エラーです。再度Discordのリンクからやりなおしてください。"
+        );
+    });
+</script>
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"
+        onload="if(submitted){window.location='/form_ok/?discord_id=' + discord_id;}"></iframe>
+</body>
 </html> 

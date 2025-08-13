@@ -2,15 +2,14 @@
 
 Ref: https://openid.net/specs/openid-authentication-2_0.html#requesting_authentication
 """
+from datetime import datetime
 from urllib.parse import urlencode
 from uuid import uuid4
-from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from requests import get
 
 from .utils import create_return_to
-
-from zoneinfo import ZoneInfo
 
 
 class Authentication:

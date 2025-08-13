@@ -9,12 +9,14 @@ def _wrap_and_store_coroutine(cache, key, coro):
         value = await coro
         cache[key] = value
         return value
+
     return func()
 
 
 def _wrap_new_coroutine(value):
     async def new_coroutine():
         return value
+
     return new_coroutine()
 
 
@@ -54,4 +56,5 @@ def cache():
         wrapper.cache = _internal_cache
         wrapper.clear_cache = _internal_cache.clear()
         return wrapper
+
     return decorator

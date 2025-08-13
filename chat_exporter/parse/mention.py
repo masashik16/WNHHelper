@@ -1,12 +1,13 @@
+import datetime
 import re
+import time
 from typing import Optional
 
 import pytz
-import datetime
-import time
 
 from chat_exporter.ext.discord_import import discord
 from chat_exporter.parse.markdown import ParseMarkdown
+
 bot: Optional[discord.Client] = None
 
 
@@ -65,7 +66,6 @@ class ParseMention:
         markdown.reverse_code_block_markdown()
         self.content = markdown.content
         return self.content
-
 
     async def escape_mentions(self):
         for match in re.finditer("(%s|%s|%s|%s|%s|%s|%s|%s)"

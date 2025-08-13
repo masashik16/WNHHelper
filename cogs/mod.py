@@ -804,8 +804,7 @@ class Moderation(commands.Cog):
                     embed.add_field(name="処罰内容の変更の反映について",
                                     value="反映までに数日かかる場合がございます。\n予めご了承ください。")
                 view = SendAppealView(user, case_id, embed)
-                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？",
-                                                        # noqa
+                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？", # noqa
                                                         embed=embed, view=view, ephemeral=True)
         else:
             error_embed = discord.Embed(description="⚠️ 受付以外の場合はコメントが必須です。", color=Color_ERROR)

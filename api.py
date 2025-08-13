@@ -1,7 +1,9 @@
-from dotenv import load_dotenv
 import json
 import os
+
 import requests
+from dotenv import load_dotenv
+
 from logs import logger
 
 load_dotenv()

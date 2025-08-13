@@ -1,7 +1,5 @@
 import datetime
-import io
 import os
-import requests
 
 import discord
 from discord.ext import commands
