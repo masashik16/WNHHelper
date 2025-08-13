@@ -21,17 +21,17 @@ MY_GUILD = discord.Object(id=GUILD_ID)
 # 読み込むCogの名前を格納
 INITIAL_EXTENSIONS = [
     "cogs.auth",
-    # "cogs.contact",
-    # "cogs.cmd1",
-    # "cogs.cmd2",
-    # "cogs.event",
-    # "cogs.discord_event",
-    # "cogs.division",
-    # "cogs.give_take_role",
-    # "cogs.mod",
-    # "cogs.newbie_role",
-    # "cogs.rule",
-    "cogs.test"
+    "cogs.contact",
+    "cogs.cmd1",
+    "cogs.cmd2",
+    "cogs.event",
+    "cogs.discord_event",
+    "cogs.division",
+    "cogs.give_take_role",
+    "cogs.mod",
+    "cogs.newbie_role",
+    "cogs.rule",
+    # "cogs.test"
 ]
 
 
@@ -63,6 +63,7 @@ class MyBot(commands.Bot):
         if thread.parent_id == 1054002378984149003:
             action_datetime = time.time()
             await db.save_question_log(thread.owner_id, action_datetime)
+
 
 
 # botのインスタンス化、および、起動処理
