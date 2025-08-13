@@ -5,10 +5,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from bot import check_developer
-import chat_exporter
-import io
 
+from bot import check_developer
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')

@@ -1,9 +1,9 @@
 """Some general utilities"""
 from uuid import uuid4
+
 from requests import get
 
-
-HTTPBIN='https://httpbin.org/get'
+HTTPBIN = 'https://httpbin.org/get'
 
 
 async def create_return_to(request_id):

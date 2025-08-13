@@ -6,11 +6,10 @@ from urllib.parse import urlparse, parse_qs, urlencode
 
 from requests import post
 
+from logs import logger
 from .exceptions import BadOpenIDReturnTo, OpenIDFailReturnURLVerification
 from .exceptions import OpenIDVerificationFailed
 from .utils import nonce_saver, nonce_reader
-
-from logs import logger
 
 logger = logger.getChild("openid_verify")
 
@@ -217,7 +216,7 @@ class Verification:
         """
         cleaned = response.strip().split('\n')
         return {fields.split(':')[0].strip():
-                await self.convert_type(''.join(fields.split(':')[1:]).strip())
+                    await self.convert_type(''.join(fields.split(':')[1:]).strip())
                 for fields in cleaned}
 
     async def convert_type(self, value):

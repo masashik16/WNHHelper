@@ -1,19 +1,15 @@
 import html
-import io
-import traceback
-from typing import List, Optional, Union
-
-import aiohttp
-from pytz import timezone
 from datetime import timedelta
+from typing import List, Optional
 
-from chat_exporter.construct.attachment_handler import AttachmentHandler
-from chat_exporter.ext.discord_import import discord
+from pytz import timezone
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
+from chat_exporter.construct.attachment_handler import AttachmentHandler
+from chat_exporter.ext.cache import cache
+from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.discriminator import discriminator
-from chat_exporter.ext.cache import cache
 from chat_exporter.ext.html_generator import (
     fill_out,
     bot_tag,

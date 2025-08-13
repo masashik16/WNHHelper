@@ -2,13 +2,13 @@ import io
 import os
 import time
 
-import chat_exporter
 import discord
 from discord import app_commands
 from discord.ext import commands
-import db
 from dotenv import load_dotenv
 
+import chat_exporter
+import db
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -398,7 +398,8 @@ class ToolButtonView(discord.ui.View):
             # チケットを保存
             category = DICT_CATEGORY[interaction.channel.category_id]
             category_name = DICT_NAME[category]
-            first_user_message_list = [message.content async for message in interaction.channel.history(limit=1, oldest_first=True)]
+            first_user_message_list = [message.content async for message in
+                                       interaction.channel.history(limit=1, oldest_first=True)]
             first_user_message = first_user_message_list[0]
             user = await interaction.client.fetch_user(int(first_user_message[2:-1]))
             embed = discord.Embed(colour=Color_OK)

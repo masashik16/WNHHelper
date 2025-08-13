@@ -1,14 +1,15 @@
 import asyncio
-import db
+import os
+import sys
+import time
+
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-import logs
+
+import db
 from logs import logger
-import os
-import sys
 from server import run_server
-import time
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 

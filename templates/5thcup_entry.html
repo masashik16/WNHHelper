@@ -1,213 +1,239 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>WNH CUP the 5th 選手申込フォーム</title>
-        <link href="../static/css/form.css" rel="stylesheet" type="text/css" media="all">
-        <link 
-        rel="stylesheet"
-        href="{{url_for("static",filename="css/form.css")}}"
-        />
-        <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
-    </head>
-    <body>
-        <h2>
-            WNH CUP the 5th 選手申込フォーム
-        </h2>
-        <form class="GF" id="form" action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSfIV4cBCgk1nUKyaDnHfcUxNYfSRzkI7oBUV0tXz-umamKGDg/formResponse" target="hidden_iframe" onsubmit="submitted=true;">
-            <div id="CF7">
+<head>
+    <title>WNH CUP the 5th 選手申込フォーム</title>
+    <link href="../static/css/form.css" rel="stylesheet" type="text/css" media="all">
+    <link
+            rel="stylesheet"
+            href="{{url_for(" static
+    ",filename="css/form.css")}}"
+    />
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+</head>
+<body>
+<h2>
+    WNH CUP the 5th 選手申込フォーム
+</h2>
+<form class="GF" id="form"
+      action="https://docs.google.com/forms/u/0/d/e/1FAIpQLSfIV4cBCgk1nUKyaDnHfcUxNYfSRzkI7oBUV0tXz-umamKGDg/formResponse"
+      target="hidden_iframe" onsubmit="submitted=true;">
+    <div id="CF7">
 
-                <input type="hidden" id="discord_id" name="entry.305495458" data-error_place="#textError00" readonly>
+        <input type="hidden" id="discord_id" name="entry.305495458" data-error_place="#textError00" readonly>
 
-                <table>
+        <table>
 
-                    <br><span id="textError00"><!-- error message --></span>
+            <br><span id="textError00"><!-- error message --></span>
 
-                    <tr>
-                        <th><span class="required">必須</span> Discord ユーザー名</th>
-                        <td>
-                            <input type="text" id="discord_username" name="entry.1313861678" data-error_place="#textError01" readonly>
-                            <br><span id="textError01"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> Discord ユーザー名</th>
+                <td>
+                    <input type="text" id="discord_username" name="entry.1313861678" data-error_place="#textError01"
+                           readonly>
+                    <br><span id="textError01"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> IGN</th>
-                        <td>
-                            <input type="text" id="ign" name="entry.1628767462" data-error_place="#textError02" readonly>
-                            <br><span id="textError02"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> IGN</th>
+                <td>
+                    <input type="text" id="ign" name="entry.1628767462" data-error_place="#textError02" readonly>
+                    <br><span id="textError02"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> VCの可否</th>
-                        <td>
-                            <label><input type="radio" class="check01" name="entry.1107072471" value="可" data-error_place="#textError03"/><span>可</span></label>
-                            <label><input type="radio" class="check01" name="entry.1107072471" value="聞き専" data-error_place="#textError03"/><span>聞き専</span></label>
-                            <label><input type="radio" class="check01" name="entry.1107072471" value="不可" data-error_place="#textError03"/><span>不可</span></label>
-                            <br><span id="textError03"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> VCの可否</th>
+                <td>
+                    <label><input type="radio" class="check01" name="entry.1107072471" value="可"
+                                  data-error_place="#textError03"/><span>可</span></label>
+                    <label><input type="radio" class="check01" name="entry.1107072471" value="聞き専"
+                                  data-error_place="#textError03"/><span>聞き専</span></label>
+                    <label><input type="radio" class="check01" name="entry.1107072471" value="不可"
+                                  data-error_place="#textError03"/><span>不可</span></label>
+                    <br><span id="textError03"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> 参加できる練習試合</th>
-                        <td>
-                            <span>練習試合は8/31、9/1の21:00～実施予定です。<br></span>
-                            <label><input type="radio" class="check02" name="entry.1007353241" value="すべて参加可" data-error_place="#textError04"/><span>すべて参加可</span></label>
-                            <label><input type="radio" class="check02" name="entry.1007353241" value="8/31のみ" data-error_place="#textError04"/><span>8/31のみ</span></label>
-                            <label><input type="radio" class="check02" name="entry.1007353241" value="9/1のみ" data-error_place="#textError04"/><span>9/1のみ</span></label>
-                            <label><input type="radio" class="check02" name="entry.1007353241" value="すべて参加不可" data-error_place="#textError04"/><span>すべて参加不可</span></label>
-                            <br><span id="textError04"><!-- error message --></span>
-                        </td>  
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> 参加できる練習試合</th>
+                <td>
+                    <span>練習試合は8/31、9/1の21:00～実施予定です。<br></span>
+                    <label><input type="radio" class="check02" name="entry.1007353241" value="すべて参加可"
+                                  data-error_place="#textError04"/><span>すべて参加可</span></label>
+                    <label><input type="radio" class="check02" name="entry.1007353241" value="8/31のみ"
+                                  data-error_place="#textError04"/><span>8/31のみ</span></label>
+                    <label><input type="radio" class="check02" name="entry.1007353241" value="9/1のみ"
+                                  data-error_place="#textError04"/><span>9/1のみ</span></label>
+                    <label><input type="radio" class="check02" name="entry.1007353241" value="すべて参加不可"
+                                  data-error_place="#textError04"/><span>すべて参加不可</span></label>
+                    <br><span id="textError04"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> 一番得意な艦種</th>
-                        <td>
-                            <label><input type="radio" class="check03" name="entry.1763657791" value="駆逐艦" data-error_place="#textError05"/><span>駆逐艦</span></label>
-                            <label><input type="radio" class="check03" name="entry.1763657791" value="巡洋艦" data-error_place="#textError05"/><span>巡洋艦</span></label>
-                            <label><input type="radio" class="check03" name="entry.1763657791" value="戦艦" data-error_place="#textError05"/><span>戦艦</span></label>
-                            <br><span id="textError05"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> 一番得意な艦種</th>
+                <td>
+                    <label><input type="radio" class="check03" name="entry.1763657791" value="駆逐艦"
+                                  data-error_place="#textError05"/><span>駆逐艦</span></label>
+                    <label><input type="radio" class="check03" name="entry.1763657791" value="巡洋艦"
+                                  data-error_place="#textError05"/><span>巡洋艦</span></label>
+                    <label><input type="radio" class="check03" name="entry.1763657791" value="戦艦"
+                                  data-error_place="#textError05"/><span>戦艦</span></label>
+                    <br><span id="textError05"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> 二番目に得意な艦種</th>
-                        <td>
-                            <label><input type="radio" class="check04" name="entry.496018262" value="駆逐艦" data-error_place="#textError06"/><span>駆逐艦</span></label>
-                            <label><input type="radio" class="check04" name="entry.496018262" value="巡洋艦" data-error_place="#textError06"/><span>巡洋艦</span></label>
-                            <label><input type="radio" class="check04" name="entry.496018262" value="戦艦" data-error_place="#textError06"/><span>戦艦</span></label>
-                            <br><span id="textError06"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> 二番目に得意な艦種</th>
+                <td>
+                    <label><input type="radio" class="check04" name="entry.496018262" value="駆逐艦"
+                                  data-error_place="#textError06"/><span>駆逐艦</span></label>
+                    <label><input type="radio" class="check04" name="entry.496018262" value="巡洋艦"
+                                  data-error_place="#textError06"/><span>巡洋艦</span></label>
+                    <label><input type="radio" class="check04" name="entry.496018262" value="戦艦"
+                                  data-error_place="#textError06"/><span>戦艦</span></label>
+                    <br><span id="textError06"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> 所持している艦艇</th>
-                        <td>
-                            <span>所持している艦艇をすべて選択してください<br></span>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="暁" data-error_place="#textError07"><span>暁</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="白露" data-error_place="#textError07"><span>白露</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="妙高" data-error_place="#textError07"><span>妙高</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="扶桑" data-error_place="#textError07"><span>扶桑</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="ヨルク" data-error_place="#textError07"><span>ヨルク</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="バイエルン" data-error_place="#textError07"><span>バイエルン</span></label>
-                            <label><input type="checkbox" class="check05" name="entry.1241083836" value="なし" data-error_place="#textError07"><span>なし</span></label>
-                            <br><span id="textError07"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> 所持している艦艇</th>
+                <td>
+                    <span>所持している艦艇をすべて選択してください<br></span>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="暁"
+                                  data-error_place="#textError07"><span>暁</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="白露"
+                                  data-error_place="#textError07"><span>白露</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="妙高"
+                                  data-error_place="#textError07"><span>妙高</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="扶桑"
+                                  data-error_place="#textError07"><span>扶桑</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="ヨルク"
+                                  data-error_place="#textError07"><span>ヨルク</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="バイエルン"
+                                  data-error_place="#textError07"><span>バイエルン</span></label>
+                    <label><input type="checkbox" class="check05" name="entry.1241083836" value="なし"
+                                  data-error_place="#textError07"><span>なし</span></label>
+                    <br><span id="textError07"><!-- error message --></span>
+                </td>
+            </tr>
 
-                    <tr>
-                        <th><span class="required">必須</span> 募集要項をすべて満たしていますか？</th>
-                        <td>
-                            <label><input type="checkbox" class="check06" name="entry.261572046" value="はい" data-error_place="#textError08"><span>はい</span></label>
-                            <br><span id="textError08"><!-- error message --></span>
-                        </td>
-                    </tr>
+            <tr>
+                <th><span class="required">必須</span> 募集要項をすべて満たしていますか？</th>
+                <td>
+                    <label><input type="checkbox" class="check06" name="entry.261572046" value="はい"
+                                  data-error_place="#textError08"><span>はい</span></label>
+                    <br><span id="textError08"><!-- error message --></span>
+                </td>
+            </tr>
 
-                </table>
-            </div>
-            <input type="submit" value="送信する">
-        </form>
+        </table>
+    </div>
+    <input type="submit" value="送信する">
+</form>
 
-        <script type="text/javascript">
-            const currentURL = window.location.host;
-            const params = new URLSearchParams(location.search);
-            const discord_id_input = document.getElementById("discord_id")
-            const discord_username_input = document.getElementById("discord_username")
-            const ign_input = document.getElementById("ign")
-            const discord_id = {{ discord_id|tojson }}
-            const discord_username = {{ discord_username|tojson }}
-            const ign = {{ ign|tojson }}
-            discord_id_input.value = discord_id;
-            discord_username_input.value = discord_username;
-            ign_input.value = ign;
-            // 検証
-            $(document).ready(function(){
-                $("#form").validate({
-                    errorPlacement :function(error,element){
-                        error.appendTo(element.data("error_place"));
-                    }
-                });
-                $( "#discord_username" ).rules( "add", {
-                required: true,
-                discord_username_match:true,
-                messages: {
-                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
-                }
-                });
-                $( "#ign" ).rules( "add", {
-                required: true,
-                ign_match:true,
-                messages: {
-                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
-                }
-                });
-                $( ".check01" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ選択してください"
-                }
-                });
-                $( ".check02" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ選択してください"
-                }
-                });
-                $( ".check03" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ選択してください"
-                }
-                });
-                $( ".check04" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ選択してください"
-                }
-                });
-                $( ".check05" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "1つ以上選択してください"
-                }
-                });
-                $( ".check06" ).rules( "add", {
-                required: true,
-                messages: {
-                    required: "満たしていない場合申込できません"
-                }
-                });
-                $( "#discord_id" ).rules( "add", {
-                required: true,
-                discord_id_match:true,
-                messages: {
-                    required: "認証エラーです。再度Discordのリンクからやりなおしてください"
-                }
-                });
-                $.validator.addMethod(
-                "discord_id_match",
-                function (value, element) {
-                    return value == discord_id;
-                },
-                "認証エラーです。再度Discordのリンクからやりなおしてください"
-                );
-                $.validator.addMethod(
-                "discord_username_match",
-                function (value, element) {
-                    return value == discord_username;
-                },
-                "認証エラーです。再度Discordのリンクからやりなおしてください"
-                );
-                $.validator.addMethod(
-                "ign_match",
-                function (value, element) {
-                    return value == ign;
-                },
-                "認証エラーです。再度Discordのリンクからやりなおしてください"
-                );
-            });
-        </script>
-        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(submitted){window.location='/thanks/'}"></iframe>
-    </body>
+<script type="text/javascript">
+    const currentURL = window.location.host;
+    const params = new URLSearchParams(location.search);
+    const discord_id_input = document.getElementById("discord_id")
+    const discord_username_input = document.getElementById("discord_username")
+    const ign_input = document.getElementById("ign")
+    const discord_id = {{ discord_id|tojson }}
+    const discord_username = {{ discord_username|tojson }}
+    const ign = {{ ign|tojson }}
+    discord_id_input.value = discord_id;
+    discord_username_input.value = discord_username;
+    ign_input.value = ign;
+    // 検証
+    $(document).ready(function(){
+        $("#form").validate({
+            errorPlacement :function(error,element){
+                error.appendTo(element.data("error_place"));
+            }
+        });
+        $( "#discord_username" ).rules( "add", {
+        required: true,
+        discord_username_match:true,
+        messages: {
+            required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+        }
+        });
+        $( "#ign" ).rules( "add", {
+        required: true,
+        ign_match:true,
+        messages: {
+            required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+        }
+        });
+        $( ".check01" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ選択してください"
+        }
+        });
+        $( ".check02" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ選択してください"
+        }
+        });
+        $( ".check03" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ選択してください"
+        }
+        });
+        $( ".check04" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ選択してください"
+        }
+        });
+        $( ".check05" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "1つ以上選択してください"
+        }
+        });
+        $( ".check06" ).rules( "add", {
+        required: true,
+        messages: {
+            required: "満たしていない場合申込できません"
+        }
+        });
+        $( "#discord_id" ).rules( "add", {
+        required: true,
+        discord_id_match:true,
+        messages: {
+            required: "認証エラーです。再度Discordのリンクからやりなおしてください"
+        }
+        });
+        $.validator.addMethod(
+        "discord_id_match",
+        function (value, element) {
+            return value == discord_id;
+        },
+        "認証エラーです。再度Discordのリンクからやりなおしてください"
+        );
+        $.validator.addMethod(
+        "discord_username_match",
+        function (value, element) {
+            return value == discord_username;
+        },
+        "認証エラーです。再度Discordのリンクからやりなおしてください"
+        );
+        $.validator.addMethod(
+        "ign_match",
+        function (value, element) {
+            return value == ign;
+        },
+        "認証エラーです。再度Discordのリンクからやりなおしてください"
+        );
+    });
+</script>
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"
+        onload="if(submitted){window.location='/thanks/'}"></iframe>
+</body>
 </html> 
