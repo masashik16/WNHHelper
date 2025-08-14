@@ -13,6 +13,23 @@ region_list = ["ASIA", "EU", "NA"]
 TLD = {"ASIA": "asia", "EU": "eu", "NA": "com"}
 
 
+
+async def wows_clan_search(clan_id):
+    """WoWSクラン情報の取得"""
+    url = f"https://api.worldofwarships.asia/wows/clans/info/"
+    params = {"application_id": APPLICATION_ID, "clan_id": clan_id}
+    res = requests.get(url, params=params)
+    data = json.loads(res.text)
+    clan = data["data"][f"{clan_id}"]
+    if clan is None:
+        return "ERROR"
+    clan_tag = clan["tag"]
+    clan_name = clan["name"]
+    leader = clan["leader_name"]
+    clan_dict = {"clan_id": clan_id, "clan_tag": clan_tag, "clan_name": clan_name, "leader": leader}
+    return clan_dict
+
+
 async def wows_account_search(account_id, nickname):
     """WoWS情報の取得"""
     for region in region_list:
