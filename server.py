@@ -33,9 +33,12 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22",
                      "88.214.24.0/22"]
 
-hypercorn_logger = logging.getLogger("server.access")
-hypercorn_logger.addHandler(handler)
-hypercorn_logger.setLevel(logging.INFO)
+hypercorn_access_logger = logging.getLogger("server.access")
+hypercorn_access_logger.addHandler(handler)
+hypercorn_access_logger.setLevel(logging.INFO)
+hypercorn_error_logger = logging.getLogger("server.error")
+hypercorn_error_logger.addHandler(handler)
+hypercorn_error_logger.setLevel(logging.ERROR)
 
 
 class App(Quart):
@@ -51,13 +54,13 @@ class App(Quart):
     ) -> Coroutine[None, None, None]:
         config = HyperConfig()
         config.access_log_format = "%(h)s %(r)s %(s)s %(b)s %(D)s"
-        config.accesslog = hypercorn_logger  # I modified this
+        config.accesslog = hypercorn_access_logger  # I modified this
         config.bind = [f"{host}:{port}"]
         config.ca_certs = ca_certs
         config.certfile = certfile
         if debug is not None:
             self.debug = debug
-        config.errorlog = "-"  # I modified this
+        config.errorlog = hypercorn_error_logger  # I modified this
         config.keyfile = keyfile
         return serve(self, config, shutdown_trigger=shutdown_trigger)
 
