@@ -59,7 +59,6 @@ class App(Quart):
             self.debug = debug
         config.errorlog = "-"  # I modified this
         config.keyfile = keyfile
-
         return serve(self, config, shutdown_trigger=shutdown_trigger)
 
 
@@ -111,7 +110,7 @@ async def before_request():
     return
 
 
-@_app.route("/wg_link")
+@_app.route("/wg_link", methods=["GET"])
 async def wg_link():
     userinfo_json = await callback(request.url)
     discord_id = userinfo_json["id"]
@@ -122,7 +121,7 @@ async def wg_link():
     return redirect(f"https://wargaming.net{url}")
 
 
-@_app.route("/wg_auth")
+@_app.route("/wg_auth", methods=["GET"])
 async def wg_auth():
     """ASIAサーバーユーザーの認証"""
     if request.args["openid.mode"] == "cancel":
@@ -166,7 +165,7 @@ async def comp_auth(discord_id: int, account_id: str, nickname: str) -> str:
                 f"<br>一致している場合はこの画面を閉じてください。</h2>")
 
 
-@_app.route("/")
+@_app.route("/", methods=["GET"])
 async def default():
     return f"<h1 align=\"center\">不正なアクセスです。</h1>"
 
@@ -247,7 +246,7 @@ async def default():
 #         print(task.result())
 #         return f"<h1 align=\"center\">OK</h1>"
 
-#
+# #
 # @_app.route('/cause_custom_error')
 # def cause_custom_error():
 #     raise CustomError("認証エラー", "認証時にエラーが発生しました。",
@@ -257,25 +256,35 @@ async def default():
 @_app.errorhandler(500)
 async def error_500(error):
     """500エラーが発生した場合の処理"""
-    raise CustomError("エラー", "エラーが発生しました。", "お手数ですが再度Discordからお試しください。", "")
+    return await render_template('custom_error.html', error_title="エラー", error_body_01="エラーが発生しました",
+                                 error_body_02="お手数ですが再度お試しください", )
 
 
 @_app.errorhandler(CustomError)
-def handle_custom_error(e):
-    return render_template('custom_error.html', error_title=e.args[0], error_body_01=e.args[1], error_body_02=e.args[2],
-                           error_body_03=e.args[3]), 500
+async def handle_custom_error(e):
+    return await render_template('custom_error.html', error_title=e.args[0], error_body_01=e.args[1],
+                                 error_body_02=e.args[2],
+                                 error_body_03=e.args[3]), 500
 
 
 # 認証用リンクの生成
-async def discord_link():
+async def wg_auth_link():
     """ASIAサーバー用認証リンクの生成"""
     callback_url = DOMAIN + f"/wg_link"
     login_url = "https://discord.com/api/oauth2/authorize?response_type=code&client_id=" + client_id + "&scope=identify&redirect_uri=" + callback_url + "&prompt=consent"
     return login_url
 
 
+async def clan_auth_link():
+    """ASIAサーバー用認証リンクの生成"""
+    callback_url = DOMAIN + f"/clan_edit"
+    login_url = "https://discord.com/api/oauth2/authorize?response_type=code&client_id=" + client_id + "&scope=identify+guilds.members.read&redirect_uri=" + callback_url + "&prompt=consent"
+    return login_url
+
+
 async def callback(url):
     callback_url = DOMAIN + request.path
+    print(request.path)
     authorization_code = request.args.get("code")
 
     request_postdata = {"client_id": client_id, "client_secret": client_secret, "grant_type": "authorization_code",
@@ -289,8 +298,11 @@ async def callback(url):
     # refresh_token = response_json["refresh_token"]
     # scope = response_json["scope"]
     headers = {"Authorization": f"Bearer {access_token}"}
-    userinfo_request = requests.get("https://discord.com/api/users/@me", headers=headers)
-    userinfo_json = userinfo_request.json()
+    if request.path == "/wg_link":
+        userinfo_request = requests.get("https://discord.com/api/users/@me", headers=headers)
+    elif request.path == "/clan_edit":
+        userinfo_request = requests.get(f"https://discord.com/api/users/@me/guilds/{GUILD_ID}/member", headers=headers)
+    userinfo_json = userinfo_request.json()  # noqa
     # discord_id = userinfo_json["id"]
     # discord_username = userinfo_json["username"]
     return userinfo_json
@@ -311,5 +323,5 @@ async def run_server(bot, loop) -> None:
     app = create_app(SERVICE_PORT)
     ctx = app.app_context()
     loop.create_task(ctx.push())
-    loop.create_task(app.run_task(host="0.0.0.0", port=SERVICE_PORT))
+    loop.create_task(app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False))
     return

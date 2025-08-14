@@ -10,3 +10,6 @@
 /backup/
 /新しいフォルダー/
 /cogs/test.py
+/static/css/clan.css
+/templates/clan.html
+/templates/clan_edit.html

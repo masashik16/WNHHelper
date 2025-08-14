@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import api
 import db
 from logs import logger
-from server import discord_link
+from server import wg_auth_link
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -222,7 +222,7 @@ class AuthButtonView(discord.ui.View):
     async def auth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """認証ボタン押下時の処理"""
         # ボタンへのレスポンス
-        link = await discord_link()
+        link = await wg_auth_link()
         # Embedを作成
         response_embed = discord.Embed(description="下記のURLからメインアカウントで認証を行ってください。")
         response_embed.add_field(name="リンクはこちら",
