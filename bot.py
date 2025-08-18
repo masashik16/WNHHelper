@@ -23,7 +23,7 @@ MY_GUILD = discord.Object(id=GUILD_ID)
 INITIAL_EXTENSIONS = [
     "cogs.auth",
     # "cogs.contact",
-    # "cogs.cmd1",
+    "cogs.cmd1",
     # "cogs.cmd2",
     # "cogs.event",
     # "cogs.discord_event",
