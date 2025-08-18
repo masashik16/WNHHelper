@@ -86,7 +86,6 @@ def convert_timestamp(timestamp: int) -> str:
 
 def create_app(port: int) -> Quart:
     global public_url
-    """Create flask server to receive account data"""
 
     _app.config.from_mapping(
         BASE_URL=f"{DOMAIN}/",
@@ -285,7 +284,7 @@ async def default():
 async def error_500(error):
     """500エラーが発生した場合の処理"""
     return await render_template('custom_error.html', error_title="エラー", error_body_01="エラーが発生しました",
-                                 error_body_02="お手数ですが再度お試しください", )
+                                 error_body_02="お手数ですが再度お試しください", ), 500
 
 
 @_app.errorhandler(CustomError)
