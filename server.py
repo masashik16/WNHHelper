@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import signal
+import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
 
@@ -55,7 +56,7 @@ class App(Quart):
             shutdown_trigger: Callable[..., Awaitable[None]] | None = None,
     ) -> Coroutine[None, None, None]:
         config = HyperConfig()
-        config.access_log_format = "%(h)s %(r)s %(s)s %(b)s %(D)s"
+        config.access_log_format = "%({X-Forwarded-For}i)s %(r)s %(s)s %(b)s %(D)s"
         config.accesslog = hypercorn_access_logger  # I modified this
         config.bind = [f"{host}:{port}"]
         config.ca_certs = ca_certs
@@ -116,17 +117,23 @@ def signal_handler(_, __):
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
-signal.signal(signal.SIGBREAK, signal_handler)
+if sys.platform == "win32":
+    signal.signal(signal.SIGBREAK, signal_handler)
+else:
+    signal.signal(signal.SIGTRAP, signal_handler)
 
 
 @_app.before_request
 async def before_request():
-    remote_addr = ipaddress.ip_address(request.remote_addr)
-    _app.logger.info(remote_addr)
-    for allow_network in DISALLOW_NETWORKS:
-        ip_network = ipaddress.ip_network(allow_network)
+    if request.headers.getlist("X-Forwarded-For"):
+        remote_addr = request.headers.getlist("X-Forwarded-For")[0]
+        remote_addr = ipaddress.ip_address(remote_addr)
+    else:
+        remote_addr = request.remote_addr
+        remote_addr = ipaddress.ip_address(remote_addr)
+    for disallow_network in DISALLOW_NETWORKS:
+        ip_network = ipaddress.ip_network(disallow_network)
         if remote_addr in ip_network:
-            _app.logger.info(ip_network)
             return abort(403, "許可されていないIPアドレスです。")
     return
 
@@ -268,10 +275,10 @@ async def default():
 #         return f"<h1 align=\"center\">OK</h1>"
 
 # #
-@_app.route('/cause_custom_error')
-def cause_custom_error():
-    raise CustomError("認証エラー", "認証時にエラーが発生しました。",
-                      "お手数ですがエラーコードを添えて運営チームにご連絡ください。", "エラーコード：E30001")
+# @_app.route('/cause_custom_error')
+# def cause_custom_error():
+#     raise CustomError("認証エラー", "認証時にエラーが発生しました。",
+#                       "お手数ですがエラーコードを添えて運営チームにご連絡ください。", "エラーコード：E30001")
 
 
 @_app.errorhandler(500)
@@ -339,5 +346,6 @@ async def run_server(bot, loop) -> None:
     app = create_app(SERVICE_PORT)
     ctx = app.app_context()
     loop.create_task(ctx.push())
-    loop.create_task(app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=True, shutdown_trigger=shutdown_event.wait))
+    loop.create_task(
+        app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=True, shutdown_trigger=shutdown_event.wait))  # noqa
     return
