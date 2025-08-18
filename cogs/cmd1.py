@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import importlib
 import io
 import os
 import re
@@ -14,6 +16,7 @@ import chat_exporter
 import db
 from bot import check_developer
 from logs import logger
+import server
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -60,6 +63,7 @@ class Commands1(commands.Cog):
             discord.app_commands.Choice(name="mod", value="mod"),
             discord.app_commands.Choice(name="newbie_role", value="newbie_role"),
             discord.app_commands.Choice(name="rule", value="rule"),
+            discord.app_commands.Choice(name="server", value="server"),
             # discord.app_commands.Choice(name="test", value="test"),
         ])
     @app_commands.choices(
@@ -70,11 +74,17 @@ class Commands1(commands.Cog):
     async def reload_cog(self, interaction: discord.Interaction, cog_name: str, sync_command: int):
         """cogの再読み込み"""
         await interaction.response.defer(ephemeral=True)  # noqa
-        cog = f"cogs.{cog_name}"
-        guild = self.bot.get_guild(GUILD_ID)
-        await self.bot.reload_extension(cog)
-        if sync_command == 1:
-            await self.bot.tree.sync(guild=guild)
+        if cog_name == "server":
+            await server.shutdown_server()
+            importlib.reload(server)
+            loop = asyncio.get_event_loop()
+            loop.create_task(server.run_server(self.bot, loop))
+        else:
+            cog = f"cogs.{cog_name}"
+            guild = self.bot.get_guild(GUILD_ID)
+            await self.bot.reload_extension(cog)
+            if sync_command == 1:
+                await self.bot.tree.sync(guild=guild)
         # コマンドへのレスポンス
         response_embed = discord.Embed(description=f"ℹ️ cog「{cog_name}」をリロードしました。", color=Color_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)

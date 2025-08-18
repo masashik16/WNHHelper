@@ -3,6 +3,7 @@ import ipaddress
 import logging
 import os
 import re
+import signal
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
 
@@ -39,6 +40,7 @@ hypercorn_access_logger.setLevel(logging.INFO)
 hypercorn_error_logger = logging.getLogger("server.error")
 hypercorn_error_logger.addHandler(handler)
 hypercorn_error_logger.setLevel(logging.ERROR)
+shutdown_event = asyncio.Event()
 
 
 class App(Quart):
@@ -62,6 +64,7 @@ class App(Quart):
             self.debug = debug
         config.errorlog = hypercorn_error_logger  # I modified this
         config.keyfile = keyfile
+        config.use_reloader = True
         return serve(self, config, shutdown_trigger=shutdown_trigger)
 
 
@@ -99,6 +102,21 @@ def create_app(port: int) -> Quart:
 class CustomError(Exception):
     def __init__(self, *args):
         self.args = args
+
+
+async def shutdown_server():
+    shutdown_event.set()
+    return
+
+
+def signal_handler(_, __):
+    loop = asyncio.get_event_loop()
+    asyncio.run_coroutine_threadsafe(shutdown_server(), loop)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGBREAK, signal_handler)
 
 
 @_app.before_request
@@ -250,10 +268,10 @@ async def default():
 #         return f"<h1 align=\"center\">OK</h1>"
 
 # #
-# @_app.route('/cause_custom_error')
-# def cause_custom_error():
-#     raise CustomError("認証エラー", "認証時にエラーが発生しました。",
-#                       "お手数ですがエラーコードを添えて運営チームにご連絡ください。", "エラーコード：E30001")
+@_app.route('/cause_custom_error')
+def cause_custom_error():
+    raise CustomError("認証エラー", "認証時にエラーが発生しました。",
+                      "お手数ですがエラーコードを添えて運営チームにご連絡ください。", "エラーコード：E30001")
 
 
 @_app.errorhandler(500)
@@ -311,11 +329,6 @@ async def callback(url):
     return userinfo_json
 
 
-async def shutdown_server():
-    await app.shutdown()  # noqa
-    return
-
-
 async def run_server(bot, loop) -> None:
     """サーバーの起動"""
     global app
@@ -326,5 +339,5 @@ async def run_server(bot, loop) -> None:
     app = create_app(SERVICE_PORT)
     ctx = app.app_context()
     loop.create_task(ctx.push())
-    loop.create_task(app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False))
+    loop.create_task(app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=True, shutdown_trigger=shutdown_event.wait))
     return
