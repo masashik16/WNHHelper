@@ -93,15 +93,17 @@ def create_app(port: int) -> Quart:
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=5),
         SECRET_KEY=SECRET_KEY,
         SESSION_COOKIE_SECURE=True,
-        SESSION_COOKIE_SAMESITE="None"
+        SESSION_COOKIE_SAMESITE="None",
     )
     public_url = f"{DOMAIN}/"
     return _app
 
 
 class CustomError(Exception):
-    def __init__(self, *args):
-        self.args = args
+    def __init__(self, error_title:str, error_list:list, error_code:str ):
+        self.error_title = error_title
+        self.error_list = error_list
+        self.error_code = error_code
 
 
 async def shutdown_server():
@@ -151,22 +153,27 @@ async def wg_link():
 @_app.route("/wg_auth", methods=["GET"])
 async def wg_auth():
     """ASIAサーバーユーザーの認証"""
-    if request.args["openid.mode"] == "cancel":
-        raise CustomError("認証エラー", "認証がキャンセルされました。",
-                          "お手数ですが再度Discordからお試しください。", "")
-    if "discord_id" not in session:
-        raise CustomError("認証エラー", "認証エラーが発生しました。",
+    openid_mode = request.args.get("openid.mode")
+    discord_id_str = session.get("discord_id")
+    if openid_mode is None:
+        raise CustomError("エラー", ["エラーが発生しました。",
+                          "お手数ですが再度Discordからお試しください。"], "E10001")
+    if openid_mode == "cancel":
+        raise CustomError("認証エラー", ["認証がキャンセルされました。",
+                          "お手数ですが再度Discordからお試しください。"], "E10002")
+    if discord_id_str is None:
+        raise CustomError("認証エラー", ["認証エラーが発生しました。",
                           "制限時間を超過したか、BOTの再起動等によりセッションが切断されました。",
-                          "お手数ですが再度Discordからお試しください。")
+                          "お手数ですが再度Discordからお試しください。"], "E10003")
     else:
-        discord_id = int(session["discord_id"])
+        discord_id = int(discord_id_str)
         current_url = request.url
         regex = r"https://wargaming.net/id/([0-9]+)-(\w+)/"
         verify = Verification(current_url)
         identities = await verify.verify()
         if not identities:
-            raise CustomError("アカウント認証エラー", "エラーが発生しました。",
-                              "お手数ですが再度Discordからお試しください。", "")
+            raise CustomError("アカウント認証エラー", ["エラーが発生しました。",
+                              "お手数ですが再度Discordからお試しください。"], "E10004")
         match = re.search(regex, identities["identity"])
         account_id = match.group(1)
         nickname = match.group(2)
@@ -179,8 +186,8 @@ async def comp_auth(discord_id: int, account_id: str, nickname: str) -> str:
     session.pop("discord_id", None)
     region = await api.wows_account_search(account_id, nickname)
     if region == "ERROR":
-        raise CustomError("アカウント認証エラー", "指定されたアカウントにはPC版WoWSのプレイ歴がありません。",
-                          "お手数ですが指定したアカウントでPC版WoWSを1戦以上プレイしてから再度お試しください。", "")
+        raise CustomError("アカウント認証エラー", ["指定されたアカウントにはPC版WoWSのプレイ歴がありません。",
+                          "お手数ですが指定したアカウントでPC版WoWSを1戦以上プレイしてから再度お試しください。"], "E10005")
     else:
         from cogs.auth import add_role_authed
         asyncio.run_coroutine_threadsafe(add_role_authed(bot_obj, discord_id), bot_obj.loop)
@@ -283,15 +290,12 @@ async def default():
 @_app.errorhandler(500)
 async def error_500(error):
     """500エラーが発生した場合の処理"""
-    return await render_template('custom_error.html', error_title="エラー", error_body_01="エラーが発生しました",
-                                 error_body_02="お手数ですが再度お試しください", ), 500
+    return await render_template('custom_error.html', error_title="エラー", error_list=["エラーが発生しました", "お手数ですが再度お試しください"],error_code="E500" )
 
 
 @_app.errorhandler(CustomError)
 async def handle_custom_error(e):
-    return await render_template('custom_error.html', error_title=e.args[0], error_body_01=e.args[1],
-                                 error_body_02=e.args[2],
-                                 error_body_03=e.args[3]), 500
+    return await render_template('custom_error.html', error_title=e.error_title, error_list=e.error_list, error_code=e.error_code), 500
 
 
 # 認証用リンクの生成
@@ -311,15 +315,15 @@ async def clan_auth_link():
 
 async def callback(url):
     callback_url = DOMAIN + request.path
-    print(request.path)
     authorization_code = request.args.get("code")
 
     request_postdata = {"client_id": client_id, "client_secret": client_secret, "grant_type": "authorization_code",
                         "code": authorization_code, "redirect_uri": callback_url}
     accesstoken_request = requests.post("https://discord.com/api/oauth2/token", data=request_postdata)
-
     response_json = accesstoken_request.json()
-    access_token = response_json["access_token"]
+    access_token = response_json.get("access_token")
+    if access_token is None:
+        raise CustomError("エラー", ["エラーが発生しました。", "お手数ですが再度Discordからお試しください。"], "E20001")
     # token_type = response_json["token_type"]
     # expires_in = response_json["expires_in"]
     # refresh_token = response_json["refresh_token"]
@@ -346,5 +350,5 @@ async def run_server(bot, loop) -> None:
     ctx = app.app_context()
     loop.create_task(ctx.push())
     loop.create_task(
-        app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=True, shutdown_trigger=shutdown_event.wait))  # noqa
+        app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False, shutdown_trigger=shutdown_event.wait))  # noqa
     return
