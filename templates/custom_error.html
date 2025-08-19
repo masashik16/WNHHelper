@@ -6,11 +6,12 @@
 
 </head>
 <body>
-    <h1 align=center>{{error_body_01}}</h1>
+    <h1 align=center>{{error_title}}</h1>
     <h2 align=center>
-        {{error_body_02}}
-    <br>{{error_body_03}}
-    <br>{{error_body_04}}
+        {% for i in error_list %}
+        {{ i }}<br>
+        {% endfor %}
+        エラーコード：{{error_code}}
     </h2>
 </body>
 </html>
