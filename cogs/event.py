@@ -24,8 +24,8 @@ logger = logger.getChild("event")
 # EVENT1_INPUT1 = discord.ui.TextInput(label="1.IGN", max_length=50, )
 EVENT1_INPUT2 = discord.ui.TextInput(label="1.申し込み種別", placeholder="受講者 or 見学者", max_length=30, )
 EVENT1_INPUT3 = discord.ui.TextInput(label="2.参加可能時間", placeholder="20:00～22:00", max_length=30, )
-EVENT1_INPUT4 = discord.ui.TextInput(label="3.事前質問", placeholder="", style=discord.TextStyle.long, max_length=400, )
-EVENT1_INPUT5 = discord.ui.TextInput(label="4.その他記載事項", placeholder="", style=discord.TextStyle.long,
+EVENT1_INPUT4 = discord.ui.TextInput(label="3.事前質問", placeholder="", style=discord.TextStyle.long, max_length=400, )  # noqa
+EVENT1_INPUT5 = discord.ui.TextInput(label="4.その他記載事項", placeholder="", style=discord.TextStyle.long,  # noqa
                                      required=False, max_length=400, )
 # EVENT1_INPUT5 = discord.ui.TextInput(label="5.TEXT", placeholder="TEXT", max_length=30, )
 EVENT1_INPUTS = [EVENT1_INPUT2, EVENT1_INPUT3, EVENT1_INPUT4, EVENT1_INPUT5]
@@ -114,13 +114,13 @@ class Event1Button(discord.ui.View):
         self.event1_entry_button.disabled = True
         self.event1_cancel_button.disabled = True
 
-    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event1_submit")
+    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event1_submit")  # noqa
     async def event1_entry_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """申込ボタン押下時の処理"""
         # ボタンへのレスポンス
         await interaction.response.send_modal(Event1Form())  # noqa
 
-    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event1_cancel")
+    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event1_cancel")  # noqa
     async def event1_cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """キャンセルボタン押下時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
@@ -157,7 +157,7 @@ class Event1Button(discord.ui.View):
             response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event1_Admin")
+    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event1_Admin")  # noqa
     async def event1_admin_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
         if wnh_staff_role not in interaction.user.roles:
@@ -244,13 +244,13 @@ class Event2Button(discord.ui.View):
         self.event2_entry_button.disabled = True
         self.event2_cancel_button.disabled = True
 
-    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event2_Submit")
+    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event2_Submit")  # noqa
     async def event2_entry_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """申込ボタン押下時の処理"""
         # ボタンへのレスポンス
         await interaction.response.send_modal(Event2Form())  # noqa
 
-    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event2_Cancel")
+    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event2_Cancel")  # noqa
     async def event2_cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """キャンセルボタン押下時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
@@ -287,7 +287,7 @@ class Event2Button(discord.ui.View):
             response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event2_Admin")
+    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event2_Admin")  # noqa
     async def event2_admin_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
         if wnh_staff_role not in interaction.user.roles:

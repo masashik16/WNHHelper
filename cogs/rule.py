@@ -86,7 +86,7 @@ class RuleButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="ルールに同意する", emoji="✅", style=discord.ButtonStyle.green, custom_id="Rule_Agree")
+    @discord.ui.button(label="ルールに同意する", emoji="✅", style=discord.ButtonStyle.green, custom_id="Rule_Agree")  # noqa
     async def rule_agree(self, interaction: discord.Interaction, button: discord.ui.Button):
         """ルール同意ボタン押下時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
@@ -145,7 +145,7 @@ class NoRoleButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="必要なロールを取得する", style=discord.ButtonStyle.green,
+    @discord.ui.button(label="必要なロールを取得する", style=discord.ButtonStyle.green,  # noqa
                        custom_id="role_none")
     async def none_role(self, interaction: discord.Interaction, button: discord.ui.Button):
         """ルール同意ボタン押下時の処理"""

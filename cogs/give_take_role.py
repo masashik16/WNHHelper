@@ -42,11 +42,11 @@ class GiveTakeRole(commands.Cog):
             log_channel = self.bot.get_channel(1359754126782890085)
             cmd1 = self.bot.get_cog("Commands1")
             newbie = self.bot.get_cog("Newbie")
-            await cmd1.give_and_take_role("div")
+            await cmd1.give_and_take_role("div")  # noqa
             await log_channel.send(f"月1ロール更新(分隊)が完了しました。")
-            await cmd1.give_and_take_role("question")
+            await cmd1.give_and_take_role("question")  # noqa
             await log_channel.send(f"月1ロール更新(質問)が完了しました。")
-            await newbie.check_newbie_role()
+            await newbie.check_newbie_role()  # noqa
             await log_channel.send(f"初心者ロール資格確認が完了しました。")
             logger.info("月1ロール更新が完了しました。")
         else:

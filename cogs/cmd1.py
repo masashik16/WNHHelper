@@ -14,9 +14,9 @@ from dotenv import load_dotenv
 
 import chat_exporter
 import db
+import server
 from bot import check_developer
 from logs import logger
-import server
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -32,6 +32,7 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("cmd1")
+
 
 
 class Commands1(commands.Cog):
@@ -75,10 +76,10 @@ class Commands1(commands.Cog):
         """cogの再読み込み"""
         await interaction.response.defer(ephemeral=True)  # noqa
         if cog_name == "server":
-            await server.shutdown_server()
+            server.shutdown_server()
             importlib.reload(server)
             loop = asyncio.get_event_loop()
-            loop.create_task(server.run_server(self.bot, loop))
+            loop.create_task(server.start_server_process(self.bot))
         else:
             cog = f"cogs.{cog_name}"
             guild = self.bot.get_guild(GUILD_ID)
@@ -354,7 +355,7 @@ class Commands1(commands.Cog):
         rank_1st = statistics.multimode(log_list)
         if type(rank_1st) is str:
             log_list = [user_id for user_id in log_list if user_id != rank_1st]
-            add_role_list.append(int(rank_1st))
+            add_role_list.append(int(rank_1st))  # noqa
         else:
             for user_id_multi in rank_1st:
                 log_list = [user_id for user_id in log_list if user_id != user_id_multi]
@@ -362,7 +363,7 @@ class Commands1(commands.Cog):
         rank_2nd = statistics.multimode(log_list)
         if type(rank_2nd) is str:
             log_list = [user_id for user_id in log_list if user_id != rank_2nd]
-            add_role_list.append(int(rank_2nd))
+            add_role_list.append(int(rank_2nd))  # noqa
         else:
             for user_id_multi in rank_2nd:
                 log_list = [user_id for user_id in log_list if user_id != user_id_multi]
@@ -370,7 +371,7 @@ class Commands1(commands.Cog):
         log_list = [user_id for user_id in log_list if user_id != rank_2nd]
         rank_3rd = statistics.multimode(log_list)
         if type(rank_3rd) is str:
-            add_role_list.append(int(rank_3rd))
+            add_role_list.append(int(rank_3rd))  # noqa
         else:
             for user_id_multi in rank_3rd:
                 add_role_list.append(int(user_id_multi))
@@ -506,10 +507,10 @@ class MsgTransferDropdownView(discord.ui.View):
         self.message = message
         self.send_list = None
         self.type = None
-        self.remove_item(self.set_channel)
+        self.remove_item(self.set_channel)  # noqa
         self.remove_item(self.set_user)
         self.remove_item(self.set_role)
-        self.remove_item(self.transfer_message_button)
+        self.remove_item(self.transfer_message_button)  # noqa
 
     @discord.ui.select(
         cls=discord.ui.Select,
@@ -522,7 +523,7 @@ class MsgTransferDropdownView(discord.ui.View):
     )
     async def set_type(self, interaction: discord.Interaction, select: discord.ui.Select):
         if select.values[0] == "channel":
-            self.add_item(self.set_channel)
+            self.add_item(self.set_channel)  # noqa
             self.type = "channel"
         elif select.values[0] == "user":
             self.add_item(self.set_user)
@@ -533,6 +534,7 @@ class MsgTransferDropdownView(discord.ui.View):
         self.remove_item(self.set_type)
         await interaction.response.edit_message(content="転送先を選択してください。", view=self)  # noqa
 
+    # noinspection PyTypeChecker
     @discord.ui.select(
         cls=discord.ui.ChannelSelect,
         placeholder="転送先のチャンネルを選択",
@@ -544,8 +546,8 @@ class MsgTransferDropdownView(discord.ui.View):
         embed = discord.Embed()
         embed.add_field(name="送信内容", value=self.message.content, inline=False)
         embed.add_field(name="転送先のチャンネル", value=transfer_to, inline=False)
-        self.remove_item(self.set_channel)
-        self.add_item(self.transfer_message_button)
+        self.remove_item(self.set_channel)  # noqa
+        self.add_item(self.transfer_message_button)  # noqa
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
@@ -566,7 +568,7 @@ class MsgTransferDropdownView(discord.ui.View):
         embed.add_field(name="送信内容", value=self.message.content, inline=False)
         embed.add_field(name="転送先のユーザー", value=transfer_to, inline=False)
         self.remove_item(self.set_user)
-        self.add_item(self.transfer_message_button)
+        self.add_item(self.transfer_message_button)  # noqa
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
@@ -581,11 +583,11 @@ class MsgTransferDropdownView(discord.ui.View):
         embed.add_field(name="送信内容", value=self.message.content, inline=False)
         embed.add_field(name="転送先のロール", value=transfer_to, inline=False)
         self.remove_item(self.set_role)
-        self.add_item(self.transfer_message_button)
+        self.add_item(self.transfer_message_button)  # noqa
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
-    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
     async def transfer_message_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.type == "channel":
             channel = await self.send_list.fetch()
@@ -623,7 +625,7 @@ class CreateEmbedButton(discord.ui.View):
         self.message = message
         self.embed = embed
 
-    @discord.ui.button(label="フィールドを追加", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="フィールドを追加", style=discord.ButtonStyle.blurple)  # noqa
     async def add_field_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """ボタン押下時の処理"""
         # フォームの呼び出し
@@ -640,7 +642,7 @@ class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
     # フォームの入力項目の定義（最大5個）
     message_content = discord.ui.TextInput(
         label="メッセージ_本文",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
@@ -653,7 +655,7 @@ class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
 
     embed_description = discord.ui.TextInput(
         label="Embed_本文",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
@@ -666,7 +668,7 @@ class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
 
     field1_value = discord.ui.TextInput(
         label="フィールド1_本文",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
@@ -716,7 +718,7 @@ class AddEmbedFieldForm(discord.ui.Modal, title="フィールドを追加"):
 
     field1_value = discord.ui.TextInput(
         label="フィールド1_本文",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
@@ -729,7 +731,7 @@ class AddEmbedFieldForm(discord.ui.Modal, title="フィールドを追加"):
 
     field2_value = discord.ui.TextInput(
         label="フィールド1_本文",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )

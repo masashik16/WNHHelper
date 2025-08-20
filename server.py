@@ -6,9 +6,8 @@ import re
 import signal
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import pytz
 import requests
 from dotenv import load_dotenv
 from hypercorn.asyncio import serve
@@ -75,15 +74,6 @@ public_url = None
 _app = App(__name__)
 
 
-def convert_timestamp(timestamp: int) -> str:
-    """タイムゾーンを日本に変更"""
-
-    timezone = pytz.timezone("Asia/Tokyo")
-    dt_object = datetime.fromtimestamp(timestamp)
-    jst_time = dt_object.astimezone(timezone)
-    return jst_time.strftime("%Y/%m/%d %H:%M JST")
-
-
 def create_app(port: int) -> Quart:
     global public_url
 
@@ -100,7 +90,7 @@ def create_app(port: int) -> Quart:
 
 
 class CustomError(Exception):
-    def __init__(self, error_title:str, error_list:list, error_code:str ):
+    def __init__(self, error_title: str, error_list: list, error_code: str):
         self.error_title = error_title
         self.error_list = error_list
         self.error_code = error_code
@@ -157,14 +147,14 @@ async def wg_auth():
     discord_id_str = session.get("discord_id")
     if openid_mode is None:
         raise CustomError("エラー", ["エラーが発生しました。",
-                          "お手数ですが再度Discordからお試しください。"], "E10001")
+                                     "お手数ですが再度Discordからお試しください。"], "E10001")
     if openid_mode == "cancel":
         raise CustomError("認証エラー", ["認証がキャンセルされました。",
-                          "お手数ですが再度Discordからお試しください。"], "E10002")
+                                         "お手数ですが再度Discordからお試しください。"], "E10002")
     if discord_id_str is None:
         raise CustomError("認証エラー", ["認証エラーが発生しました。",
-                          "制限時間を超過したか、BOTの再起動等によりセッションが切断されました。",
-                          "お手数ですが再度Discordからお試しください。"], "E10003")
+                                         "制限時間を超過したか、BOTの再起動等によりセッションが切断されました。",
+                                         "お手数ですが再度Discordからお試しください。"], "E10003")
     else:
         discord_id = int(discord_id_str)
         current_url = request.url
@@ -173,7 +163,7 @@ async def wg_auth():
         identities = await verify.verify()
         if not identities:
             raise CustomError("アカウント認証エラー", ["エラーが発生しました。",
-                              "お手数ですが再度Discordからお試しください。"], "E10004")
+                                                       "お手数ですが再度Discordからお試しください。"], "E10004")
         match = re.search(regex, identities["identity"])
         account_id = match.group(1)
         nickname = match.group(2)
@@ -187,7 +177,8 @@ async def comp_auth(discord_id: int, account_id: str, nickname: str) -> str:
     region = await api.wows_account_search(account_id, nickname)
     if region == "ERROR":
         raise CustomError("アカウント認証エラー", ["指定されたアカウントにはPC版WoWSのプレイ歴がありません。",
-                          "お手数ですが指定したアカウントでPC版WoWSを1戦以上プレイしてから再度お試しください。"], "E10005")
+                                                   "お手数ですが指定したアカウントでPC版WoWSを1戦以上プレイしてから再度お試しください。"],
+                          "E10005")
     else:
         from cogs.auth import add_role_authed
         asyncio.run_coroutine_threadsafe(add_role_authed(bot_obj, discord_id), bot_obj.loop)
@@ -290,12 +281,15 @@ async def default():
 @_app.errorhandler(500)
 async def error_500(error):
     """500エラーが発生した場合の処理"""
-    return await render_template('custom_error.html', error_title="エラー", error_list=["エラーが発生しました", "お手数ですが再度お試しください"],error_code="E500" )
+    return await render_template('custom_error.html', error_title="エラー",
+                                 error_list=["エラーが発生しました", "お手数ですが再度お試しください"],
+                                 error_code="E500")
 
 
 @_app.errorhandler(CustomError)
 async def handle_custom_error(e):
-    return await render_template('custom_error.html', error_title=e.error_title, error_list=e.error_list, error_code=e.error_code), 500
+    return await render_template('custom_error.html', error_title=e.error_title, error_list=e.error_list,
+                                 error_code=e.error_code), 500
 
 
 # 認証用リンクの生成
