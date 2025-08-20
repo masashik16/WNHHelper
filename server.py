@@ -343,7 +343,6 @@ async def run_server(bot, loop) -> None:
     """サーバーの起動"""
     global app
     global bot_obj
-    global server
     bot_obj = bot
 
     app = create_app(SERVICE_PORT)
