@@ -22,17 +22,17 @@ MY_GUILD = discord.Object(id=GUILD_ID)
 # 読み込むCogの名前を格納
 INITIAL_EXTENSIONS = [
     "cogs.auth",
-    "cogs.contact",
+    # "cogs.contact",
     "cogs.cmd1",
-    "cogs.cmd2",
-    "cogs.event",
-    "cogs.discord_event",
-    "cogs.division",
-    "cogs.give_take_role",
-    "cogs.mod",
-    "cogs.newbie_role",
-    "cogs.rule",
-    # "cogs.test"
+    # "cogs.cmd2",
+    # "cogs.event",
+    # "cogs.discord_event",
+    # "cogs.division",
+    # "cogs.give_take_role",
+    # "cogs.mod",
+    # "cogs.newbie_role",
+    # "cogs.rule",
+    "cogs.test"
 ]
 
 

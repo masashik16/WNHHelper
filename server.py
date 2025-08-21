@@ -7,6 +7,7 @@ import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import timedelta
 
+from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
 from flask import abort, Flask, render_template, request
 from hypercorn.asyncio import serve
@@ -69,6 +70,7 @@ app = None
 bot_obj = None
 public_url = None
 _app = App(__name__)
+sess = Session()
 
 
 def create_app(bot, loop) -> Flask:
@@ -82,11 +84,13 @@ def create_app(bot, loop) -> Flask:
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_TYPE="filesystem",
+        SESSION_PERMANENT=False,
+        SESSION_TYPE="cachelib",
+        SESSION_CACHELIB=FileSystemCache(threshold=250, cache_dir="flask_session"),
     )
     public_url = f"{DOMAIN}/"
     _app.register_blueprint(app_wg_auth(bot, loop))
-    Session(_app)
+    sess.init_app(_app)
     return _app
 
 
