@@ -69,7 +69,7 @@ class App(Flask):
 app = None
 bot_obj = None
 public_url = None
-_app = App(__name__)
+_app = App(__name__, static_url_path="/")
 sess = Session()
 
 
