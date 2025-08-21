@@ -78,8 +78,7 @@ class Commands1(commands.Cog):
         if cog_name == "server":
             server.shutdown_server()
             importlib.reload(server)
-            loop = asyncio.get_event_loop()
-            loop.create_task(server.start_server_process(self.bot))
+            server.run_server(self.bot, self.bot.loop)
         else:
             cog = f"cogs.{cog_name}"
             guild = self.bot.get_guild(GUILD_ID)

@@ -71,6 +71,6 @@ if __name__ == "__main__":
     bot = MyBot()
     loop = asyncio.get_event_loop()
     loop.create_task(bot.start(TOKEN))
-    loop.create_task(run_server(bot, loop))
+    run_server(bot, loop)
     loop.run_forever()
     loop.close()

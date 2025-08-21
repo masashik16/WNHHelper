@@ -14,3 +14,6 @@
 /templates/clan.html
 /templates/clan_edit.html
 /embed_template
+/uninstall.txt
+/flask_session/
+/views/backup/

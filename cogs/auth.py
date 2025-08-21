@@ -222,7 +222,7 @@ class AuthButtonView(discord.ui.View):
     async def auth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """認証ボタン押下時の処理"""
         # ボタンへのレスポンス
-        link = await wg_auth_link()
+        link = wg_auth_link()
         # Embedを作成
         response_embed = discord.Embed(description="下記のURLからメインアカウントで認証を行ってください。")
         response_embed.add_field(name="リンクはこちら",
