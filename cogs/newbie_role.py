@@ -111,7 +111,7 @@ class NewbieButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="まったり", emoji="🔵", style=discord.ButtonStyle.blurple, custom_id="mattari")
+    @discord.ui.button(label="まったり", emoji="🔵", style=discord.ButtonStyle.blurple, custom_id="mattari")  # noqa
     async def button_mattari(self, interaction: discord.Interaction, button: discord.ui.Button):
         """まったりロール用ボタン押下時の処理"""
         # ギルドとロールの取得
@@ -158,7 +158,7 @@ class NewbieButton(discord.ui.View):
                                                    color=Color_OK)
                     await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="がつがつ", emoji="🟠", style=discord.ButtonStyle.blurple, custom_id="gatugatu")
+    @discord.ui.button(label="がつがつ", emoji="🟠", style=discord.ButtonStyle.blurple, custom_id="gatugatu")  # noqa
     async def button_gatsu(self, interaction: discord.Interaction, button: discord.ui.Button):
         """がつがつロール用ボタン押下時の処理"""
         # ギルドとロールの取得

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 import db
 from logs import logger
-from server import run_server
+
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -69,9 +69,10 @@ class MyBot(commands.Bot):
 
 # botのインスタンス化、および、起動処理
 if __name__ == "__main__":
+    from server import run_server
     bot = MyBot()
     loop = asyncio.get_event_loop()
     loop.create_task(bot.start(TOKEN))
-    loop.create_task(run_server(bot, loop))
+    run_server(bot, loop)
     loop.run_forever()
     loop.close()

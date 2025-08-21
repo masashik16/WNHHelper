@@ -261,9 +261,9 @@ class Moderation(commands.Cog):
                            inline=False)
         # 記録CHへケース情報を送信
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"
-                                                           f"\n処罰種類：厳重注意\n違反内容：{warn_type_1}",
-                                                   files=evidence)
+                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
+                                                           f"\n処罰種類：厳重注意\n違反内容：{warn_type_1}",  # noqa
+                                                   files=evidence)  # noqa
         # ログCHへ送信するケース情報（Embed）を作成
         log_embed = discord.Embed(title=f"ケース{case_id} | 厳重注意 | {user.name}")
         log_embed.add_field(name="ユーザー",
@@ -273,14 +273,14 @@ class Moderation(commands.Cog):
         log_embed.add_field(name="処罰理由",
                             value=f"{warn_type_1}", inline=False)
         log_embed.add_field(name="記録へのリンク",
-                            value=f"<#{log.thread.id}>", inline=False)
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
         log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
         # ログCHへケース情報を送信
         await channel_mod_log.send(embed=log_embed)
         # DBへケースIDと記録スレッドIDを保存
-        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+        # await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
         # 証拠画像を添付できる形式へ変換
-        for e in log.message.attachments:
+        for e in log.message.attachments:  # noqa
             try:
                 f = await e.to_file()
             except AttributeError:
@@ -413,9 +413,10 @@ class Moderation(commands.Cog):
                                      f"\n\n尚、質問・申立の期限はこの警告を受けた日から3日以内とします。", inline=False)
             # 記録CHへケース情報を送信
             log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"
+                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
                                                                f"\n処罰種類：警告\n付与ポイント：{point}\n処罰理由：{warn_type_2}",
-                                                       files=evidence)
+                                                       # noqa
+                                                       files=evidence)  # noqa
             # ログCHへ送信するケース情報（Embed）を作成
             log_embed = discord.Embed(title=f"ケース{case_id} | 警告 | {user.name}")
             log_embed.add_field(name="ユーザー",
@@ -427,14 +428,14 @@ class Moderation(commands.Cog):
             log_embed.add_field(name="処罰理由",
                                 value=f"{warn_type_2}", inline=False)
             log_embed.add_field(name="記録へのリンク",
-                                value=f"<#{log.thread.id}>", inline=False)
+                                value=f"<#{log.thread.id}>", inline=False)  # noqa
             log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
             # ログCHへケース情報を送信
             await channel_mod_log.send(embed=log_embed)
             # DBへケースIDと記録スレッドIDを保存
-            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
             # 証拠画像を添付できる形式へ変換
-            for e in log.message.attachments:
+            for e in log.message.attachments:  # noqa
                 try:
                     f = await e.to_file()
                 except AttributeError:
@@ -465,7 +466,7 @@ class Moderation(commands.Cog):
             # 5ポイント以上のためBAN
             elif new_point >= 5:
                 await self.auto_ban(interaction=interaction, base_case_id=case_id, user=user,
-                                    base_thread_id=log.thread.id)
+                                    base_thread_id=log.thread.id)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、ユーザー：{user.display_name}（UID：{user.id}）"
@@ -473,7 +474,7 @@ class Moderation(commands.Cog):
             # 2～4ポイントのため一定期間発言禁止
             else:
                 await self.auto_timeout(interaction=interaction, base_case_id=case_id, user=user, point=new_point,
-                                        base_thread_id=log.thread.id)
+                                        base_thread_id=log.thread.id)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、ユーザー：{user.display_name}（UID：{user.id}）"
@@ -516,10 +517,10 @@ class Moderation(commands.Cog):
                                inline=False)
             # 記録CHへケース情報を送信
             log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"
-                                                               f"\n処罰種類：発言禁止\n期間：{length}日"
-                                                               f"\n処罰理由：ケース{base_case_id}に基づく自動処理"
-                                                               f"\n元ケース：<#{base_thread_id}>")
+                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"  # noqa
+                                                               f"\n処罰種類：発言禁止\n期間：{length}日"  # noqa
+                                                               f"\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
+                                                               f"\n元ケース：<#{base_thread_id}>")  # noqa
             # ログCHへ送信するケース情報（Embed）を作成
             log_embed = discord.Embed(title=f"ケース{case_id} | 発言禁止 | {user.name}")
             log_embed.add_field(name="ユーザー",
@@ -531,12 +532,12 @@ class Moderation(commands.Cog):
             log_embed.add_field(name="処罰理由",
                                 value=f"ケース{base_case_id}に基づく自動処理", inline=False)
             log_embed.add_field(name="記録へのリンク",
-                                value=f"<#{log.thread.id}>", inline=False)
+                                value=f"<#{log.thread.id}>", inline=False)  # noqa
             log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
             # ログCHへケース情報を送信
             await channel_mod_log.send(embed=log_embed)
             # DBへケースIDと記録スレッドIDを保存
-            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
             # 違反ユーザーのDMへ通達を送信
             try:
                 await user.send(embed=dm_embed)
@@ -587,8 +588,8 @@ class Moderation(commands.Cog):
                            inline=False)
         # 記録CHへケース情報を送信
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"
-                                                           f"\n処罰種類：BAN\n処罰理由：ケース{base_case_id}に基づく自動処理"
+                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"  # noqa
+                                                           f"\n処罰種類：BAN\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
                                                            f"\n元ケース：<#{base_thread_id}>")
         # ログCHへ送信するケース情報（Embed）を作成
         log_embed = discord.Embed(title=f"ケース{case_id} | BAN | {user.name}")
@@ -599,12 +600,12 @@ class Moderation(commands.Cog):
         log_embed.add_field(name="処罰理由",
                             value=f"ケース{base_case_id}に基づく自動処理", inline=False)
         log_embed.add_field(name="記録へのリンク",
-                            value=f"<#{log.thread.id}>", inline=False)
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
         log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
         # ログCHへケース情報を送信
         await channel_mod_log.send(embed=log_embed)
         # DBへケースIDと記録スレッドIDを保存
-        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
         # 違反ユーザーのDMへ通達を送信
         member = guild.get_member(user.id)
         if member is not None:
@@ -708,13 +709,13 @@ class Moderation(commands.Cog):
             # 記録CHへケース情報を送信
             thread = await guild.fetch_channel(thread_id)
             log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"
+                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
                                                                f"\n処罰種類：処罰内容変更\n変更種類：{change_type_str}\n原ケース番号：{thread.jump_url}\n変更後の付与ポイント：{point}\n変更後の累積ポイント：{total_point}")
 
             messages = [message async for message in thread.history(oldest_first=True)]
             content = messages[0].content
             if change_type == 1:
-                await messages[0].edit(content=f"{content}\n\n処罰内容変更済\n変更処理ケース番号：{log.thread.jump_url}")
+                await messages[0].edit(content=f"{content}\n\n処罰内容変更済\n変更処理ケース番号：{log.thread.jump_url}")  # noqa
             else:
                 await messages[0].edit(content=f"{content}\n\n処罰取消済")
             # ログCHへ送信するケース情報（Embed）を作成
@@ -730,12 +731,12 @@ class Moderation(commands.Cog):
             log_embed.add_field(name="変更後の付与ポイント",
                                 value=f"{point}", inline=False)
             log_embed.add_field(name="記録へのリンク",
-                                value=f"<#{log.thread.id}>", inline=False)
+                                value=f"<#{log.thread.id}>", inline=False)  # noqa
             log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
             # ログCHへケース情報を送信
             await channel_mod_log.send(embed=log_embed)
             # DBへケースIDと記録スレッドIDを保存
-            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
             # コマンドへのレスポンス
             response_embed = discord.Embed(description="ℹ️ 処罰内容を変更しました", color=Color_OK)
             await interaction.followup.send(embed=response_embed)
@@ -804,7 +805,8 @@ class Moderation(commands.Cog):
                     embed.add_field(name="処罰内容の変更の反映について",
                                     value="反映までに数日かかる場合がございます。\n予めご了承ください。")
                 view = SendAppealView(user, case_id, embed)
-                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？", # noqa
+                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？",  # noqa
+                                                        # noqa
                                                         embed=embed, view=view, ephemeral=True)
         else:
             error_embed = discord.Embed(description="⚠️ 受付以外の場合はコメントが必須です。", color=Color_ERROR)
@@ -887,7 +889,7 @@ class SendAppealView(discord.ui.View):
         self.case_id = case_id
         self.embed = embed
 
-    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
     async def send_appeal_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = interaction.guild
         try:
@@ -914,14 +916,14 @@ class MessageReportForm(discord.ui.Modal, title="不適切なメッセージを�
     # フォームの入力項目の定義（最大5個）
     input_warn = discord.ui.TextInput(
         label="注意事項（入力しないでください）",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         placeholder="このフォームはメッセージの報告用です。不適切なアバターやニックネーム、VCでの行為の報告は、ユーザーを右クリックして「アプリ>ユーザーの報告」からお願いします。",
         max_length=1,
         required=False,
     )
     input = discord.ui.TextInput(
         label="報告内容の詳細",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         placeholder="例：〇〇に対する暴言を吐いている",
         max_length=300,
     )
@@ -995,7 +997,7 @@ class UserReportForm(discord.ui.Modal, title="不適切なユーザーを報告"
     # フォームの入力項目の定義（最大5個）
     input_warn = discord.ui.TextInput(
         label="注意事項（入力しないでください）",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         placeholder="このフォームはユーザーの報告用です。報告したい特定のメッセージがある場合は、メッセージを右クリックして「アプリ>メッセージの報告」からお願いします。",
         max_length=1,
         required=False,
@@ -1003,7 +1005,7 @@ class UserReportForm(discord.ui.Modal, title="不適切なユーザーを報告"
 
     input = discord.ui.TextInput(
         label="報告内容の詳細",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         placeholder="例：不適切なユーザー名を設定している",
         max_length=300,
     )

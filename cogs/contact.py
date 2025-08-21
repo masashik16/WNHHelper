@@ -233,12 +233,12 @@ class ClanButtonView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey,
+    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey,  # noqa
                        custom_id="ticket_close_clan")
     async def ticket_close_button_clan(self, interaction: discord.Interaction, button: discord.ui.Button):
         await ticket_close(interaction)
 
-    @discord.ui.button(label="面談希望日時を申請", emoji="🈸", style=discord.ButtonStyle.grey,
+    @discord.ui.button(label="面談希望日時を申請", emoji="🈸", style=discord.ButtonStyle.grey,  # noqa
                        custom_id="ticket_clan_form_button")
     async def ticket_clan_form_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
@@ -258,7 +258,7 @@ class CloseButtonView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey, custom_id="ticket_close")
+    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey, custom_id="ticket_close")  # noqa
     async def ticket_close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await ticket_close(interaction)
 
@@ -324,7 +324,7 @@ class ToolButtonView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey, custom_id="ticket_open")
+    @discord.ui.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey, custom_id="ticket_open")  # noqa
     async def ticket_open_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
         retry_after = bucket.update_rate_limit()
@@ -368,7 +368,7 @@ class ToolButtonView(discord.ui.View):
             await interaction.channel.send(embed=embed)  # noqa
             await interaction.message.delete()
 
-    @discord.ui.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey, custom_id="ticket_save")
+    @discord.ui.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey, custom_id="ticket_save")  # noqa
     async def ticket_save_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
         retry_after = bucket.update_rate_limit()
@@ -414,7 +414,7 @@ class ToolButtonView(discord.ui.View):
                                   colour=Color_OK)
             await interaction.channel.send(embed=embed)  # noqa
 
-    @discord.ui.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey, custom_id="ticket_delete")
+    @discord.ui.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey, custom_id="ticket_delete")  # noqa
     async def ticket_delete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
         retry_after = bucket.update_rate_limit()

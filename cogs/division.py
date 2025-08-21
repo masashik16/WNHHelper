@@ -62,7 +62,7 @@ class DivisionButton(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="分隊を募集する", style=discord.ButtonStyle.blurple, custom_id="div")
+    @discord.ui.button(label="分隊を募集する", style=discord.ButtonStyle.blurple, custom_id="div")  # noqa
     async def division_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """ボタン押下時の処理"""
         if interaction.user.is_timed_out():
@@ -108,7 +108,7 @@ class DivisionForm(discord.ui.Modal, title="分隊募集フォーム"):
 
     other = discord.ui.TextInput(
         label="5.その他注記事項（無回答でもOK）",
-        style=discord.TextStyle.long,
+        style=discord.TextStyle.long,  # noqa
         placeholder="",
         required=False,
         max_length=300,
