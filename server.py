@@ -15,7 +15,7 @@ from hypercorn.config import Config as HyperConfig
 from exception import FlaskCustomError
 from flask_session import Session
 from logs import logger, handler
-from views.wg_auth import app_wg_auth
+from views.wg_auth import construct_blueprint as app_wg_auth
 
 load_dotenv()
 GUILD_ID = int(os.environ.get("GUILD_ID"))
@@ -71,7 +71,7 @@ public_url = None
 _app = App(__name__)
 
 
-def create_app(port: int) -> Flask:
+def create_app(bot, loop) -> Flask:
     global public_url
 
     _app.config.from_mapping(
@@ -85,12 +85,13 @@ def create_app(port: int) -> Flask:
         SESSION_TYPE="filesystem",
     )
     public_url = f"{DOMAIN}/"
-    _app.register_blueprint(app_wg_auth)
+    _app.register_blueprint(app_wg_auth(bot, loop))
     Session(_app)
     return _app
 
 
 def shutdown_server():
+    print("サーバーをシャットダウンしています")
     shutdown_event.set()
     return
 
@@ -163,7 +164,7 @@ def run_server(bot, loop) -> None:
     global bot_obj
     bot_obj = bot
 
-    app = create_app(SERVICE_PORT)
+    app = create_app(bot, loop)
     ctx = app.app_context()
     ctx.push()
     print("サーバー起動中")

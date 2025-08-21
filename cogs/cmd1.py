@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import importlib
 import io
@@ -17,6 +16,7 @@ import db
 import server
 from bot import check_developer
 from logs import logger
+from views import wg_auth
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -32,7 +32,6 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("cmd1")
-
 
 
 class Commands1(commands.Cog):
@@ -77,7 +76,9 @@ class Commands1(commands.Cog):
         await interaction.response.defer(ephemeral=True)  # noqa
         if cog_name == "server":
             server.shutdown_server()
-            importlib.reload(server)
+            reload_list = [wg_auth, server]
+            for module in reload_list:
+                importlib.reload(module)
             server.run_server(self.bot, self.bot.loop)
         else:
             cog = f"cogs.{cog_name}"
