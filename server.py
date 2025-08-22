@@ -53,7 +53,7 @@ class App(Flask):
             shutdown_trigger: Callable[..., Awaitable[None]] | None = None,
     ) -> Coroutine[None, None, None]:
         config = HyperConfig()
-        config.access_log_format = "%({X-Forwarded-For}i)s %(r)s %(s)s %(b)s %(D)s"
+        config.access_log_format = "%({X-Forwarded-For}i)s %(h)s　%(r)s %(s)s %(b)s %(D)s"
         config.accesslog = hypercorn_access_logger  # I modified this
         config.bind = [f"{host}:{port}"]
         config.ca_certs = ca_certs
