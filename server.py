@@ -130,7 +130,6 @@ def before_request():
 
 @_app.route("/", methods=["GET"])
 def default():
-    print(DISALLOW_NETWORKS)
     return abort(403, "不正なアクセスです。")
 
 
