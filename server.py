@@ -130,7 +130,7 @@ def before_request():
 
 @_app.route("/", methods=["GET"])
 def default():
-    return f"<h1 align=\"center\">不正なアクセスです。</h1>"
+    return abort(403, "不正なアクセスです。")
 
 
 @_app.errorhandler(500)
@@ -144,7 +144,7 @@ def error_500(error):
 @_app.errorhandler(FlaskCustomError)
 def handle_custom_error(e):
     return render_template('custom_error.html', error_title=e.error_title, error_list=e.error_list,
-                           error_code=e.error_code), 500
+                           error_code=e.error_code), e.response_code
 
 
 # 認証用リンクの生成
