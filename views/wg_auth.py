@@ -45,14 +45,14 @@ def construct_blueprint(bot, loop):
         discord_id_str = session.get("discord_id")
         if openid_mode is None:
             raise FlaskCustomError("エラー", ["エラーが発生しました。",
-                                              "お手数ですが再度Discordからお試しください。"], "E10001")
+                                              "お手数ですが再度Discordからお試しください。"], "E10001", 400)
         if openid_mode == "cancel":
             raise FlaskCustomError("認証エラー", ["認証がキャンセルされました。",
-                                                  "お手数ですが再度Discordからお試しください。"], "E10002")
+                                                  "お手数ですが再度Discordからお試しください。"], "E10002", 200)
         if discord_id_str is None:
             raise FlaskCustomError("認証エラー", ["認証エラーが発生しました。",
                                                   "制限時間を超過したか、BOTの再起動等によりセッションが切断されました。",
-                                                  "お手数ですが再度Discordからお試しください。"], "E10003")
+                                                  "お手数ですが再度Discordからお試しください。"], "E10003", 500)
         else:
             discord_id = int(discord_id_str)
             current_url = request.url
@@ -61,7 +61,7 @@ def construct_blueprint(bot, loop):
             identities = asyncio.run_coroutine_threadsafe(verify.verify(), loop).result()  # noqa
             if not identities:
                 raise FlaskCustomError("アカウント認証エラー", ["エラーが発生しました。",
-                                                                "お手数ですが再度Discordからお試しください。"], "E10004")
+                                                                "お手数ですが再度Discordからお試しください。"], "E10004", 500)
             match = re.search(regex, identities["identity"])
             account_id = match.group(1)
             nickname = match.group(2)
@@ -76,7 +76,7 @@ def construct_blueprint(bot, loop):
         if region == "ERROR":
             raise FlaskCustomError("アカウント認証エラー", ["指定されたアカウントにはPC版WoWSのプレイ歴がありません。",
                                                             "お手数ですが指定したアカウントでPC版WoWSを1戦以上プレイしてから再度お試しください。"],
-                                   "E10005")
+                                   "E10005", 200)
         else:
             from cogs.auth import add_role_authed
             asyncio.run_coroutine_threadsafe(add_role_authed(bot, discord_id), loop)  # noqa
@@ -98,7 +98,7 @@ def construct_blueprint(bot, loop):
         access_token = response_json.get("access_token")
         if access_token is None:
             raise FlaskCustomError("エラー", ["エラーが発生しました。", "お手数ですが再度Discordからお試しください。"],
-                                   "E20001")
+                                   "E20001", 500)
         # token_type = response_json["token_type"]
         # expires_in = response_json["expires_in"]
         # refresh_token = response_json["refresh_token"]
