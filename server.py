@@ -28,9 +28,9 @@ client_id = os.environ.get("DISCORD_CLIENT_ID")
 client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
 GAS_KEY = os.environ.get("GAS_KEY")
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
-DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22",
-                     "88.214.24.0/22"]
+# Python 3.14以降でos.reload_environ()とともに変更
+# DISALLOW_NETWORKS = os.environ.get("DISALLOW_NETWORKS").replace(" ", "").split(",")
+DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22", "88.214.24.0/22", "185.93.89.0/24"]
 
 hypercorn_access_logger = logging.getLogger("server.access")
 hypercorn_access_logger.addHandler(handler)
@@ -130,6 +130,7 @@ def before_request():
 
 @_app.route("/", methods=["GET"])
 def default():
+    print(DISALLOW_NETWORKS)
     return abort(403, "不正なアクセスです。")
 
 
