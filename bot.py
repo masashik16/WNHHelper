@@ -30,6 +30,7 @@ INITIAL_EXTENSIONS = [
     # "cogs.division",
     # "cogs.give_take_role",
     # "cogs.mod",
+    # "cogs.msg"
     # "cogs.newbie_role",
     # "cogs.rule",
     "cogs.test"
