@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from flask import abort, Flask, render_template, request
 from hypercorn.asyncio import serve
 from hypercorn.config import Config as HyperConfig
+from hypercorn.middleware import ProxyFixMiddleware
 
 from exception import FlaskCustomError
 from flask_session import Session
@@ -22,6 +23,7 @@ load_dotenv()
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 SERVICE_PORT = int(os.environ.get("SERVICE_PORT"))
 DOMAIN = os.environ.get("DOMAIN")
+ENV = os.environ.get("ENV")
 logger = logger.getChild("server")
 
 client_id = os.environ.get("DISCORD_CLIENT_ID")
@@ -53,7 +55,7 @@ class App(Flask):
             shutdown_trigger: Callable[..., Awaitable[None]] | None = None,
     ) -> Coroutine[None, None, None]:
         config = HyperConfig()
-        config.access_log_format = "%({X-Forwarded-For}i)s %(h)s　%(r)s %(s)s %(b)s %(D)s"
+        config.access_log_format = "%({X-Forwarded-For}i)s %(r)s %(s)s %(b)s %(D)s"
         config.accesslog = hypercorn_access_logger  # I modified this
         config.bind = [f"{host}:{port}"]
         config.ca_certs = ca_certs
@@ -118,6 +120,11 @@ def before_request():
     if request.headers.getlist("X-Forwarded-For"):
         remote_addr = request.headers.getlist("X-Forwarded-For")[0]
         remote_addr = ipaddress.ip_address(remote_addr)
+    elif ENV == "prod":
+        ip_address = ipaddress.ip_address(request.remote_addr)
+        ip_network = ipaddress.ip_network(ip_address)
+        hypercorn_access_logger.info(f"直IPでのアクセスを検知しました。アクセス元：{str(ip_network)}")
+        raise FlaskCustomError("不正なアクセスを検知しました",["直IPでのアクセスは許可されていません。","もしURLでのアクセスなのにこのエラーが表示されている場合、運営チームまでお問い合わせください。"], "E40301", 403)
     else:
         remote_addr = request.remote_addr
         remote_addr = ipaddress.ip_address(remote_addr)
