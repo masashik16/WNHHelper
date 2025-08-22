@@ -12,7 +12,19 @@ logger = logger.getChild("api")
 region_list = ["ASIA", "EU", "NA"]
 TLD = {"ASIA": "asia", "EU": "eu", "NA": "com"}
 
-
+async def wows_user_clan(account_id):
+    """WoWSクラン情報の取得"""
+    url = f"https://api.worldofwarships.asia/wows/clans/accountinfo/"
+    params = {"application_id": APPLICATION_ID, "account_id": account_id}
+    res = requests.get(url, params=params)
+    data = json.loads(res.text)
+    clan = data["data"][f"{account_id}"]
+    if clan is None:
+        return "ERROR_ACCOUNT_NOT_FOUND"
+    clan_id = clan["clan_id"]
+    if clan_id is None:
+        return "ERROR_NOT_JOINED_CLAN"
+    return clan_id
 
 async def wows_clan_search(clan_id):
     """WoWSクラン情報の取得"""
