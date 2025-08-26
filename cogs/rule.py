@@ -136,7 +136,7 @@ class RuleMessageView(ui.LayoutView):
 
     action_row = ui.ActionRow()
 
-    @action_row.button(label="上記の内容を確認し、同意します", emoji="✅", style=discord.ButtonStyle.green,
+    @action_row.button(label="上記の内容を確認し、同意します", emoji="✅", style=discord.ButtonStyle.green,  # noqa
                        custom_id="rule_button")  # noqa
     async def rule_agree(self, interaction: discord.Interaction, button: ui.Button):
         """ルール同意ボタン押下時の処理"""

@@ -367,7 +367,7 @@ class ToolButtonView(ui.LayoutView):
     container = ui.Container(text)
     action_row = ui.ActionRow()
 
-    @action_row.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey,
+    @action_row.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey,  # noqa
                        custom_id="ticket_open")  # noqa
     async def ticket_open_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
@@ -415,7 +415,7 @@ class ToolButtonView(ui.LayoutView):
             await interaction.channel.send(embed=embed)  # noqa
             await interaction.message.delete()
 
-    @action_row.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey,
+    @action_row.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey,  # noqa
                        custom_id="ticket_save")  # noqa
     async def ticket_save_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
@@ -465,7 +465,7 @@ class ToolButtonView(ui.LayoutView):
                                   colour=Color_OK)
             await interaction.channel.send(embed=embed)  # noqa
 
-    @action_row.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey,
+    @action_row.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey,  # noqa
                        custom_id="ticket_delete")  # noqa
     async def ticket_delete_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
@@ -556,11 +556,11 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
         """フォーム送信時の処理"""
         await interaction.response.defer()  # noqa
         # 担当者に送信
-        embed = discord.Embed(title=f"クラン{self.clan_tag.component.value}　面談希望日時")
-        embed.add_field(name="第一希望（平日枠）", value=self.dt1.component.value, inline=False)
-        embed.add_field(name="第二希望（平日枠）", value=self.dt2.component.value, inline=False)
-        embed.add_field(name="第一希望（土日祝枠）", value=self.dt3.component.value, inline=False)
-        embed.add_field(name="第二希望（土日祝枠）", value=self.dt4.component.value, inline=False)
+        embed = discord.Embed(title=f"クラン{self.clan_tag.component.value}　面談希望日時")  # noqa
+        embed.add_field(name="第一希望（平日枠）", value=self.dt1.component.value, inline=False)  # noqa
+        embed.add_field(name="第二希望（平日枠）", value=self.dt2.component.value, inline=False)  # noqa
+        embed.add_field(name="第一希望（土日祝枠）", value=self.dt3.component.value, inline=False)  # noqa
+        embed.add_field(name="第二希望（土日祝枠）", value=self.dt4.component.value, inline=False)  # noqa
         channel = interaction.guild.get_channel(CLAN_MEET_ID)
         await channel.send(content=f"<@&{CLAN_STAFF_ROLE}>\n{interaction.channel.jump_url}", embed=embed)
         # フォームへのレスポンス
