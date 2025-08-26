@@ -2,8 +2,8 @@ import os
 import time
 
 import discord
-from discord import ui
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -14,6 +14,7 @@ env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
+ROLE_ID_DIVISION = int(os.environ.get("ROLE_ID_DIVISION"))
 CHANNEL_ID_DIVISION = int(os.environ.get("CHANNEL_ID_DIVISION"))
 Color_OK = 0x00ff00
 Color_WARN = 0xffa500
@@ -28,14 +29,10 @@ class Division(commands.Cog):
         self.bot = bot
 
     async def create_message(self, interaction: discord.Interaction):
-        """分隊募集フォーム用ボタンを作成"""
-        # ボタンを含むビューを作成
-        view = DivisionButton()
-        # Embedの作成
-        embed = discord.Embed(description="分隊を募集するには下のボタンを押してください", color=0x0000ff)
+        """分隊募集ボタンを作成"""
         # ビューを含むメッセージを送信
         channel = interaction.channel
-        await channel.send(embed=embed, view=view)
+        await channel.send(view=DivisionView())
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
@@ -57,14 +54,46 @@ class Division(commands.Cog):
 """ボタンの実装"""
 
 
-class DivisionButton(ui.View):
-    """ボタンの実装"""
-
-    def __init__(self):
+class DivisionView(ui.LayoutView):
+    def __init__(self) -> None:
         super().__init__(timeout=None)
 
-    @ui.button(label="分隊を募集する", style=discord.ButtonStyle.blurple, custom_id="div")  # noqa
-    async def division_button(self, interaction: discord.Interaction, button: ui.Button):
+    text1 = ui.TextDisplay("## 分隊募集について\n"
+                           "当サーバーでの分隊募集の告知は次の手順でご利用いただけます\n"
+                           "※分隊をする際に告知を行う義務はありません。<#!982862998412595220>で集まった方と行っていただくことも可能です。")
+    text2 = ui.TextDisplay("### 募集方法\n"
+                           "1.下のボタンを押して分隊募集フォームを開きます\n"
+                           "（このフォームを募集した分隊はこのサーバーのVCを使用してください）\n"
+                           "2.\n<#979965008836456449>に募集メッセージとスレッドが作成されますので、注視して下さい。"
+                           "3.募集を終了する場合、再開などの変更がある場合はスレッドにその旨を書き込んで下さい。")
+    text3 = ui.TextDisplay("### 参加方法\n"
+                           "<#979965008836456449>から参加したい分隊を探し、見つけた場合はスレッドに書き込みます（チャンネルには書き込めません）\n"
+                           "※VCに直接入っていただいても構いません")
+    text4 = ui.TextDisplay("### 分隊募集通知について\n"
+                           "分隊募集の通知が欲しい人は下のボタンを押すと専用ロールが付与されます\n"
+                           "不要になった場合は再度押して下さい。")
+    container = ui.Container(text1, text2, text3, text4)
+
+    action_row = ui.ActionRow()
+
+    @action_row.button(label="分隊通知ロールの取得/解除", emoji="🤝", style=discord.ButtonStyle.blurple,  # noqa
+                       custom_id="division")  # noqa
+    async def division_role_button(self, interaction: discord.Interaction, button: ui.Button):
+        """ボタン押下時の処理"""
+        div_role = interaction.guild.get_role(ROLE_ID_DIVISION)
+        role = interaction.user.get_role(ROLE_ID_DIVISION)
+        if role is not None:
+            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を削除しました。", color=Color_OK)
+            await interaction.user.remove_roles(div_role, reason="分隊ロールボタンによる")
+            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+        else:
+            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を取得しました。", color=Color_OK)
+            await interaction.user.add_roles(div_role, reason="分隊ロールボタンによる")
+            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+
+    @action_row.button(label="分隊を募集する", style=discord.ButtonStyle.blurple,  # noqa
+                       custom_id="division_role")
+    async def division_form_button(self, interaction: discord.Interaction, button: ui.Button):
         """ボタン押下時の処理"""
         if interaction.user.is_timed_out():
             error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=Color_ERROR)
@@ -82,37 +111,50 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         super().__init__()
 
     # フォームの入力項目の定義（最大5個）
-    dtime = ui.TextInput(
-        label="1.日時",
-        placeholder="例：今日19:00~21:00",
-        max_length=30,
+
+    dtime = ui.Label(
+        text="1.日時",
+        component=ui.TextInput(
+            placeholder="例：今日19:00～21:00",
+            max_length=30,
+        ),
     )
 
-    tier = ui.TextInput(
-        label="2. Tier（オペレーションの場合は名称）",
-        placeholder="例：8～10",
-        max_length=30,
+    tier = ui.Label(
+        text="2.Tier（オペレーションの場合は名称）",
+        component=ui.TextInput(
+            placeholder="例：8～10",
+            max_length=30,
+        ),
     )
 
-    member_count = ui.TextInput(
-        label="3.募集人数",
-        placeholder="例：2人",
-        max_length=30,
+    member_count = ui.Label(
+        text="3.募集人数",
+        component=ui.TextInput(
+            placeholder="例：2人",
+            max_length=30,
+        ),
     )
 
-    newbie = ui.TextInput(
-        label="4.初心者ですか？（無回答でもOK）",
-        placeholder="はい or いいえ",
-        max_length=30,
-        required=False,
+    newbie = discord.ui.Label(
+        text="4.初心者ですか？",
+        description="初心者の定義：ランダム戦の戦闘数が3000戦以下の方",
+        component=discord.ui.Select(
+            options=[
+                discord.SelectOption(label="はい", value="はい"),
+                discord.SelectOption(label="いいえ", value="いいえ"),
+                discord.SelectOption(label="無回答", value="無回答"),
+            ],
+        ),
     )
 
-    other = ui.TextInput(
-        label="5.その他注記事項（無回答でもOK）",
-        style=discord.TextStyle.long,  # noqa
-        placeholder="",
-        required=False,
-        max_length=300,
+    other = ui.Label(
+        text="5.その他注記事項（無回答でもOK）",
+        component=ui.TextInput(
+            style=discord.TextStyle.long,  # noqa
+            required=False,
+            max_length=300,
+        ),
     )
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -126,20 +168,17 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         avatar = user.display_avatar.url
         # 分隊募集メッセージ（Embed）の作成
         embed = discord.Embed(title=f"分隊募集中！", color=0x0000ff)
-        embed.add_field(name="1.日時", value=self.dtime.value, inline=False)
-        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.value, inline=False)
-        embed.add_field(name="3. 募集人数", value=self.member_count.value, inline=False)
-        if not self.newbie.value == "":
-            embed.add_field(name="4. 初心者ですか？", value=self.newbie.value, inline=False)
-        else:
-            embed.add_field(name="4. 初心者ですか？", value="入力なし", inline=False)
-        if not self.other.value == "":
-            embed.add_field(name="5. その他注記事項", value=self.other.value, inline=False)
+        embed.add_field(name="1.日時", value=self.dtime.component.value, inline=False)
+        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.component.value, inline=False)
+        embed.add_field(name="3. 募集人数", value=self.member_count.component.value, inline=False)
+        embed.add_field(name="4. 初心者ですか？", value=self.newbie.component.values[0], inline=False)
+        if not self.other.component.value == "":
+            embed.add_field(name="5. その他注記事項", value=self.other.component.value, inline=False)
         else:
             embed.add_field(name="5. その他注記事項", value="入力なし", inline=False)
         embed.set_author(name=f"{server_name}", icon_url=f"{avatar}")
         # 分隊募集メッセージを送信し、紐づくスレッドを作成
-        message = await channel_division.send("<@&990131642238652436>", embed=embed)
+        message = await channel_division.send(f"<@&{ROLE_ID_DIVISION}>", embed=embed)
         thread = await message.create_thread(name=f"{server_name} - 分隊募集")
         await thread.add_user(user)
         # フォームへのレスポンス
@@ -164,4 +203,4 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
 async def setup(bot):
     """起動時のコグへの追加"""
     await bot.add_cog(Division(bot))
-    bot.add_view(view=DivisionButton())
+    bot.add_view(view=DivisionView())
