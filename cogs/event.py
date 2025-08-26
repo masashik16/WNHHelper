@@ -2,6 +2,7 @@ import os
 import time
 
 import discord
+from discord import ui
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -22,22 +23,22 @@ logger = logger.getChild("event")
 
 """Event1の設定"""
 # EVENT1_INPUT1 = discord.ui.TextInput(label="1.IGN", max_length=50, )
-EVENT1_INPUT2 = discord.ui.TextInput(label="1.申し込み種別", placeholder="受講者 or 見学者", max_length=30, )
-EVENT1_INPUT3 = discord.ui.TextInput(label="2.参加可能時間", placeholder="20:00～22:00", max_length=30, )
-EVENT1_INPUT4 = discord.ui.TextInput(label="3.事前質問", placeholder="", style=discord.TextStyle.long, max_length=400, )  # noqa
-EVENT1_INPUT5 = discord.ui.TextInput(label="4.その他記載事項", placeholder="", style=discord.TextStyle.long,  # noqa
-                                     required=False, max_length=400, )
+EVENT1_INPUT2 = ui.TextInput(label="1.申し込み種別", placeholder="受講者 or 見学者", max_length=30, )
+EVENT1_INPUT3 = ui.TextInput(label="2.参加可能時間", placeholder="20:00～22:00", max_length=30, )
+EVENT1_INPUT4 = ui.TextInput(label="3.事前質問", placeholder="", style=discord.TextStyle.long, max_length=400, )  # noqa
+EVENT1_INPUT5 = ui.TextInput(label="4.その他記載事項", placeholder="", style=discord.TextStyle.long,  # noqa
+                             required=False, max_length=400, )
 # EVENT1_INPUT5 = discord.ui.TextInput(label="5.TEXT", placeholder="TEXT", max_length=30, )
 EVENT1_INPUTS = [EVENT1_INPUT2, EVENT1_INPUT3, EVENT1_INPUT4, EVENT1_INPUT5]
 """Event2の設定"""
 
-EVENT2_INPUT1 = discord.ui.TextInput(label="1.IGN", max_length=50, )
-EVENT2_INPUT2 = discord.ui.TextInput(label="2.VCの可否", placeholder="可 or 聞き専", max_length=30, )
-EVENT2_INPUT3 = discord.ui.TextInput(label="3.一番得意または一番乗っている艦種", max_length=30, )
-EVENT2_INPUT4 = discord.ui.TextInput(label="4.11月25日、26日の練習試合に参加出来ますか？",
-                                     placeholder="両日可 or 25のみ or 26のみ or 両日不可", max_length=30, )
-EVENT2_INPUT5 = discord.ui.TextInput(label="5.募集要項の条件を満たしていますか？",
-                                     placeholder="いいえの場合お申し込みができません。", max_length=30, )
+EVENT2_INPUT1 = ui.TextInput(label="1.IGN", max_length=50, )
+EVENT2_INPUT2 = ui.TextInput(label="2.VCの可否", placeholder="可 or 聞き専", max_length=30, )
+EVENT2_INPUT3 = ui.TextInput(label="3.一番得意または一番乗っている艦種", max_length=30, )
+EVENT2_INPUT4 = ui.TextInput(label="4.11月25日、26日の練習試合に参加出来ますか？",
+                             placeholder="両日可 or 25のみ or 26のみ or 両日不可", max_length=30, )
+EVENT2_INPUT5 = ui.TextInput(label="5.募集要項の条件を満たしていますか？",
+                             placeholder="いいえの場合お申し込みができません。", max_length=30, )
 EVENT2_INPUTS = [EVENT2_INPUT1, EVENT2_INPUT2, EVENT2_INPUT3, EVENT2_INPUT4, EVENT2_INPUT5]
 
 
@@ -106,7 +107,7 @@ class Event(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class Event1Button(discord.ui.View):
+class Event1Button(ui.View):
     """ボタンの実装"""
 
     def __init__(self):
@@ -114,14 +115,14 @@ class Event1Button(discord.ui.View):
         self.event1_entry_button.disabled = True
         self.event1_cancel_button.disabled = True
 
-    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event1_submit")  # noqa
-    async def event1_entry_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event1_submit")  # noqa
+    async def event1_entry_button(self, interaction: discord.Interaction, button: ui.Button):
         """申込ボタン押下時の処理"""
         # ボタンへのレスポンス
         await interaction.response.send_modal(Event1Form())  # noqa
 
-    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event1_cancel")  # noqa
-    async def event1_cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event1_cancel")  # noqa
+    async def event1_cancel_button(self, interaction: discord.Interaction, button: ui.Button):
         """キャンセルボタン押下時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
         # ギルドとスレッドの取得
@@ -157,8 +158,8 @@ class Event1Button(discord.ui.View):
             response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event1_Admin")  # noqa
-    async def event1_admin_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event1_Admin")  # noqa
+    async def event1_admin_button(self, interaction: discord.Interaction, button: ui.Button):
         wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
         if wnh_staff_role not in interaction.user.roles:
             raise discord.app_commands.CheckFailure
@@ -170,7 +171,7 @@ class Event1Button(discord.ui.View):
             self.event1_cancel_button.disabled = True
         await interaction.response.edit_message(view=self)  # noqa
 
-    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item, /) -> None:
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
         # 指定ロールを保有していない場合
         if isinstance(error, app_commands.CheckFailure):
@@ -181,7 +182,7 @@ class Event1Button(discord.ui.View):
                          f"がコマンド「{item}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class Event1Form(discord.ui.Modal, title="イベント申込フォーム"):
+class Event1Form(ui.Modal, title="イベント申込フォーム"):
     """フォームの実装"""
 
     def __init__(self):
@@ -236,7 +237,7 @@ class Event1Form(discord.ui.Modal, title="イベント申込フォーム"):
         logger.info(f"フォーム「イベント1」でエラーが発生しました。\nエラー内容：{error}")
 
 
-class Event2Button(discord.ui.View):
+class Event2Button(ui.View):
     """ボタンの実装"""
 
     def __init__(self):
@@ -244,14 +245,14 @@ class Event2Button(discord.ui.View):
         self.event2_entry_button.disabled = True
         self.event2_cancel_button.disabled = True
 
-    @discord.ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event2_Submit")  # noqa
-    async def event2_entry_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="申込はこちら", style=discord.ButtonStyle.blurple, custom_id="Event2_Submit")  # noqa
+    async def event2_entry_button(self, interaction: discord.Interaction, button: ui.Button):
         """申込ボタン押下時の処理"""
         # ボタンへのレスポンス
         await interaction.response.send_modal(Event2Form())  # noqa
 
-    @discord.ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event2_Cancel")  # noqa
-    async def event2_cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="変更・キャンセルはこちら", style=discord.ButtonStyle.red, custom_id="Event2_Cancel")  # noqa
+    async def event2_cancel_button(self, interaction: discord.Interaction, button: ui.Button):
         """キャンセルボタン押下時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
         # ギルドとスレッドの取得
@@ -287,8 +288,8 @@ class Event2Button(discord.ui.View):
             response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event2_Admin")  # noqa
-    async def event2_admin_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="運営用", style=discord.ButtonStyle.gray, custom_id="Event2_Admin")  # noqa
+    async def event2_admin_button(self, interaction: discord.Interaction, button: ui.Button):
         wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
         if wnh_staff_role not in interaction.user.roles:
             raise discord.app_commands.CheckFailure
@@ -300,7 +301,7 @@ class Event2Button(discord.ui.View):
             self.event2_cancel_button.disabled = True
         await interaction.response.edit_message(view=self)  # noqa
 
-    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item, /) -> None:
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
         # 指定ロールを保有していない場合
         if isinstance(error, app_commands.CheckFailure):
@@ -311,7 +312,7 @@ class Event2Button(discord.ui.View):
                          f"がコマンド「{item}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class Event2Form(discord.ui.Modal, title="イベント申込フォーム"):
+class Event2Form(ui.Modal, title="イベント申込フォーム"):
     """フォームの実装"""
 
     def __init__(self):

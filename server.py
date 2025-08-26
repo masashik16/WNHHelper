@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from flask import abort, Flask, render_template, request
 from hypercorn.asyncio import serve
 from hypercorn.config import Config as HyperConfig
-from hypercorn.middleware import ProxyFixMiddleware
 
 from exception import FlaskCustomError
 from flask_session import Session
@@ -32,7 +31,8 @@ GAS_KEY = os.environ.get("GAS_KEY")
 SECRET_KEY = os.environ.get("SECRET_KEY")
 # Python 3.14以降でos.reload_environ()とともに変更
 # DISALLOW_NETWORKS = os.environ.get("DISALLOW_NETWORKS").replace(" ", "").split(",")
-DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22", "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24"]
+DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22",
+                     "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24"]
 
 hypercorn_access_logger = logging.getLogger("server.access")
 hypercorn_access_logger.addHandler(handler)
@@ -65,7 +65,7 @@ class App(Flask):
         config.errorlog = hypercorn_error_logger  # I modified this
         config.keyfile = keyfile
         config.use_reloader = True
-        return serve(self, config, shutdown_trigger=shutdown_trigger)
+        return serve(self, config, shutdown_trigger=shutdown_event.wait)
 
 
 app = None
@@ -126,7 +126,9 @@ def before_request():
         if not ip_address == sparked_ip:
             ip_network = ipaddress.ip_network(ip_address)
             hypercorn_access_logger.info(f"直IPでのアクセスを検知しました。アクセス元：{str(ip_network)}")
-        raise FlaskCustomError("不正なアクセスを検知しました",["直IPでのアクセスは許可されていません。","もしURLでのアクセスなのにこのエラーが表示されている場合、運営チームまでお問い合わせください。"], "E40301", 403)
+        raise FlaskCustomError("不正なアクセスを検知しました", ["直IPでのアクセスは許可されていません。",
+                                                                "もしURLでのアクセスなのにこのエラーが表示されている場合、運営チームまでお問い合わせください。"],
+                               "E40301", 403)
     else:
         remote_addr = request.remote_addr
         remote_addr = ipaddress.ip_address(remote_addr)
@@ -171,7 +173,7 @@ def clan_auth_link():
     return login_url
 
 
-def run_server(bot, loop) -> None:
+def run_server(bot, loop):
     """サーバーの起動"""
     global app
     global bot_obj
@@ -181,6 +183,6 @@ def run_server(bot, loop) -> None:
     ctx = app.app_context()
     ctx.push()
     print("サーバー起動中")
-    loop.create_task(
+    task = loop.create_task(
         app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False, shutdown_trigger=shutdown_event.wait))  # noqa
-    return
+    return task

@@ -4,11 +4,12 @@ import time
 
 import discord
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
 import chat_exporter
-import db
+from db import get_inquiry_number
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -17,6 +18,7 @@ GUILD_ID = int(os.environ.get("GUILD_ID"))
 ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
+ROLE_ID_CLAN_RECRUITER = int(os.environ.get("ROLE_ID_CLAN_RECRUITER"))
 GENERAL_INQRY_OPEN = int(os.environ.get("GENERAL_INQRY_OPEN"))
 GENERAL_INQRY_CLOSE = int(os.environ.get("GENERAL_INQRY_CLOSE"))
 GENERAL_INQRY_LOG = int(os.environ.get("GENERAL_INQRY_LOG"))
@@ -31,6 +33,7 @@ CLAN_LOG = int(os.environ.get("CLAN_LOG"))
 CLAN_SAVE = int(os.environ.get("CLAN_SAVE"))
 CLAN_STAFF_ROLE = int(os.environ.get("CLAN_STAFF_ROLE"))
 CLAN_MEET_ID = int(os.environ.get("CLAN_MEET_ID"))
+ENV = os.environ.get("ENV")
 Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
@@ -59,30 +62,8 @@ class Contact(commands.Cog):
 
     async def create_message(self, interaction: discord.Interaction):
         """認証用メッセージを作成"""
-        # ドロップダウンを含むビューを作成
-        view = TicketDropdownView()
-        # Embedの作成
-        embed = discord.Embed(title="各種問い合わせについて",
-                              description=f"最後の対応から24時間反応がないチケットはクローズします")
-        embed.add_field(name="当サーバーに対するご意見/ご要望/その他お問い合わせ",
-                        value="下のリストから「ご意見・ご要望・その他問い合わせ」を選択してチケットを作成してください。",
-                        inline=False)
-        embed.add_field(name="公認クランプログラムへのお申し込み",
-                        value="<@&983915259838488587>ロールをご希望の方は「公認クランプログラムへのお申し込み」を選択してください。",
-                        inline=False)
-        embed.add_field(name="違反行為の報告",
-                        value="* 不適切なメッセージを報告したい場合"
-                              "\n報告したいメッセージを右クリックして「アプリ」→「メッセージの報告」をクリックし、報告内容を記載して送信してください"
-                              "\n* 不適切なニックネームやアバター・VCでの違反行為等メッセージでの違反以外を報告したい場合"
-                              "\nユーザーを右クリックして「アプリ」→「ユーザーの報告」をクリックし、報告内容を記載して送信してください"
-                              "\n\n上記の手順でエラーが起こる場合は、下記リストから「違反行為の報告」を選択してチケットを作成してください。",
-                        inline=False)
-        embed.add_field(name="セクシャルハラスメント等の通報について",
-                        value="セクシャルハラスメント等の通報で女性スタッフによる対応を希望する場合は<@767646985632481320>のDMへご連絡ください。",
-                        inline=False)
-        # # ビューを含むメッセージを送信
         channel = interaction.channel
-        await channel.send(embed=embed, view=view)
+        await channel.send(view=CreateTicketView())
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
@@ -122,14 +103,30 @@ class Contact(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class TicketDropdownView(discord.ui.View):
-    """ドロップダウンの作成"""
+class CreateTicketView(ui.LayoutView):
+    def __init__(self) -> None:
+        super().__init__(timeout=None)
 
-    def __init__(self, timeout=None):
-        super().__init__(timeout=timeout)
+    text1 = ui.TextDisplay("## 各種問い合わせについて\n"
+                           "最後の対応から24時間反応がないチケットはクローズします")
+    text2 = ui.TextDisplay("### 当サーバーに対するご意見/ご要望/その他お問い合わせ\n"
+                           "下のリストから「ご意見・ご要望・その他問い合わせ」を選択してチケットを作成してください。")
+    text3 = ui.TextDisplay("### 公認クランプログラムへのお申し込み\n"
+                           f"<@&{ROLE_ID_CLAN_RECRUITER}>ロールをご希望の方は「公認クランプログラムへのお申し込み」を選択してください。")
+    text4 = ui.TextDisplay("### 違反行為の報告\n"
+                           "* 不適切なメッセージを報告したい場合\n"
+                           "報告したいメッセージを右クリックして「アプリ」→「メッセージの報告」をクリックし、報告内容を記載して送信してください\n\n"
+                           "* 不適切なニックネームやアバター・VCでの違反行為等メッセージでの違反以外を報告したい場合\n"
+                           "ユーザーを右クリックして「アプリ」→「ユーザーの報告」をクリックし、報告内容を記載して送信してください\n\n"
+                           "上記の手順でエラーが起こる場合は、下記リストから「違反行為の報告」を選択してチケットを作成してください。")
+    text5 = ui.TextDisplay("### セクシャルハラスメント等の通報について\n"
+                           "セクシャルハラスメント等の通報で女性スタッフによる対応を希望する場合は<@767646985632481320>のDMへご連絡ください。")
+    container_container = ui.Container(text1, text2, text3, text4, text5)
 
-    @discord.ui.select(
-        cls=discord.ui.Select,
+    action_row = ui.ActionRow()
+
+    @action_row.select(
+        cls=ui.Select,
         custom_id="ticket_panel",
         placeholder="お問い合わせ内容を選択してください",
         options=[
@@ -138,9 +135,12 @@ class TicketDropdownView(discord.ui.View):
             discord.SelectOption(label="公認クランプログラムへのお申し込み", value="CLAN", emoji="🈸"),
         ],
     )
-    async def set_channel(self, interaction: discord.Interaction, select: discord.ui.Select):
+    async def set_channel(self, interaction: discord.Interaction, select: ui.Select):
         bucket = COOLDOWN.get_bucket(interaction.message)
-        retry_after = bucket.update_rate_limit()
+        if ENV == "prod":
+            retry_after = bucket.update_rate_limit()
+        else:
+            retry_after = None
         if retry_after:
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
                                         color=Color_ERROR)
@@ -149,43 +149,23 @@ class TicketDropdownView(discord.ui.View):
             await interaction.response.defer()  # noqa
             select_value = select.values[0]
             # ドロップダウンの選択項目を初期化
-            await interaction.message.edit(view=TicketDropdownView())
+            await interaction.message.edit(view=CreateTicketView())
             # 選択されたカテゴリのカテゴリチャンネルの取得
             open_category = interaction.guild.get_channel(DICT_OPEN_CATEGORY[select_value])
             close_category = interaction.guild.get_channel(DICT_CLOSE_CATEGORY[select_value])
             # DBからチケット番号を取得
-            channel_number_db = await db.get_inquiry_number(select_value)
-            # channel_number_db = 1
-            channel_number = f"{channel_number_db:04}"
-            if select_value == "GENERAL":
-                view = CloseButtonView()
-                embed = discord.Embed(title="", description="お問い合わせありがとうございます。"
-                                                            "\n問い合わせ内容をこのチャンネルに送信してお待ちください。担当者が順次対応いたします。"
-                                                            "\nチケットを閉じたい場合は 🔒をクリックしてください。")
-            elif select_value == "REPORT":
-                view = CloseButtonView()
-                embed = discord.Embed(title="", description="お問い合わせありがとうございます。"
-                                                            "\n通報内容をこのチャンネルに送信してお待ちください。担当者が順次対応いたします。"
-                                                            "\n可能な場合はスクリーンショット、メッセージリンクを添付して下さい。"
-                                                            "\nメッセージリンクのコピー方法"
-                                                            "\n・メッセージリンクをコピーしたいメッセージを右クリックし、「メッセージリンクをコピー」を選択します"
-                                                            "\nチケットを閉じたい場合は 🔒を押してください。")
-
+            if ENV == "prod":
+                channel_number_db = await get_inquiry_number(select_value)
             else:
-                view = ClanButtonView()
-                embed = discord.Embed(title="", description="公認クランプログラムへお申し込み頂きありがとうございます。"
-                                                            "\n本プログラムへのお申し込みに当たり、担当者との面談が必要となります。"
-                                                            "\nお手数ですが下のボタンからフォームを開き、**本日から7日後以降**で希望日と希望枠を入力してください。"
-                                                            "\nチケットを閉じたい場合は 🔒をクリックしてください。")
-                embed.add_field(name="希望枠について", value="希望枠は以下の枠から平日、土日祝**それぞれ2枠**選択してください。"
-                                                             "\n参加不可な枠には不可と入力してください。"
-                                                             "\n**平日**"
-                                                             "\n23:00～24:00"
-                                                             "\n24:00～25:00"
-                                                             "\n\n**土日祝**"
-                                                             "\n10:00～11:00"
-                                                             "\n11:00～12:00"
-                                                             "\n12:00～13:00")
+                channel_number_db = 1
+            channel_number = f"{channel_number_db:04}"
+            user = interaction.user
+            if select_value == "GENERAL":
+                view = GeneralTicketView(user)
+            elif select_value == "REPORT":
+                view = ReportTicketView(user)
+            else:
+                view = ClanTicketView(user)
             # チケットの重複作成の防止
             open_channels = open_category.text_channels
             close_channels = close_category.text_channels
@@ -193,7 +173,7 @@ class TicketDropdownView(discord.ui.View):
             users = []
             for channel in channels:
                 async for message in channel.history(limit=1, oldest_first=True):
-                    uid = message.content.replace("<@", "").replace(">", "")
+                    uid = message.components[0].content.replace("<@", "").replace(">", "")
                     users.append(int(uid))
             if interaction.user.id in users:
                 error_embed = discord.Embed(
@@ -212,7 +192,7 @@ class TicketDropdownView(discord.ui.View):
                 ticket = await open_category.create_text_channel(name=f"{channel_name}-{channel_number}",
                                                                  overwrites=overwrites)
 
-                await ticket.send(content=f"{interaction.user.mention}", embed=embed, view=view)
+                await ticket.send(view=view)
                 # ログの送信
                 category_name = DICT_NAME[select_value]
                 embed = discord.Embed(colour=Color_OK)
@@ -227,20 +207,18 @@ class TicketDropdownView(discord.ui.View):
                                                 ephemeral=True)  # noqa
 
 
-class ClanButtonView(discord.ui.View):
-    """ボタンの実装"""
+class ClanButton(ui.ActionRow):
+    def __init__(self) -> None:
+        super().__init__()
 
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey,  # noqa
-                       custom_id="ticket_close_clan")
-    async def ticket_close_button_clan(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey,  # noqa
+               custom_id="ticket_close_clan")
+    async def ticket_close_button_clan(self, interaction: discord.Interaction, button: ui.Button):
         await ticket_close(interaction)
 
-    @discord.ui.button(label="面談希望日時を申請", emoji="🈸", style=discord.ButtonStyle.grey,  # noqa
-                       custom_id="ticket_clan_form_button")
-    async def ticket_clan_form_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="面談希望日時を申請", emoji="🈸", style=discord.ButtonStyle.grey,  # noqa
+               custom_id="ticket_clan_form_button")
+    async def ticket_clan_form_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
         retry_after = bucket.update_rate_limit()
         if retry_after:
@@ -252,20 +230,83 @@ class ClanButtonView(discord.ui.View):
             await interaction.response.send_modal(ClanForm(view=self))  # noqa
 
 
-class CloseButtonView(discord.ui.View):
-    """ボタンの実装"""
-
-    def __init__(self):
+class ClanTicketView(ui.LayoutView):
+    def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
+        if user is not None:
+            mention = ui.TextDisplay(f"{user.mention}")
+            self.text1 = ui.TextDisplay("公認クランプログラムへお申し込み頂きありがとうございます。\n"
+                                        "本プログラムへのお申し込みに当たり、担当者との面談が必要となります。\n"
+                                        "お手数ですが下のボタンからフォームを開き、**本日から7日後以降**で希望日と希望枠を入力してください。\n"
+                                        "チケットを閉じたい場合は 🔒をクリックしてください。")
+            self.text2 = ui.TextDisplay("### 希望枠について\n"
+                                        "希望枠は以下の枠から平日、土日祝**それぞれ2枠**選択してください。\n"
+                                        "参加不可な枠には不可と入力してください。\n"
+                                        "* 平日\n"
+                                        "  * 23:00～24:00\n"
+                                        "  * 24:00～25:00\n"
+                                        "* 土日祝\n"
+                                        "  * 10:00～11:00\n"
+                                        "  * 11:00～12:00\n"
+                                        "  * 12:00～13:00")
+            container = ui.Container(self.text1, self.text2)
+            self.add_item(mention)
+            self.add_item(container)
 
-    @discord.ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey, custom_id="ticket_close")  # noqa
-    async def ticket_close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button = ClanButton()
+        self.add_item(button)
+
+
+class CloseButton(ui.ActionRow):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @ui.button(label="チケットを閉じる", emoji="🔒", style=discord.ButtonStyle.grey, custom_id="ticket_close")  # noqa
+    async def ticket_close_button(self, interaction: discord.Interaction, button: ui.Button):
         await ticket_close(interaction)
+
+
+class GeneralTicketView(ui.LayoutView):
+    def __init__(self, user=None) -> None:
+        super().__init__(timeout=None)
+        if user is not None:
+            mention = ui.TextDisplay(f"{user.mention}")
+            text = ui.TextDisplay("お問い合わせありがとうございます。\n"
+                                  "問い合わせ内容をこのチャンネルに送信してお待ちください。担当者が順次対応いたします。\n"
+                                  "チケットを閉じたい場合は 🔒をクリックしてください。")
+            container = ui.Container(text)
+            self.add_item(mention)
+            self.add_item(container)
+
+        button = CloseButton()
+        self.add_item(button)
+
+
+class ReportTicketView(ui.LayoutView):
+    def __init__(self, user=None) -> None:
+        super().__init__(timeout=None)
+        if user is not None:
+            mention = ui.TextDisplay(f"{user.mention}")
+            text = ui.TextDisplay("お問い合わせありがとうございます。\n"
+                                  "通報内容をこのチャンネルに送信してお待ちください。担当者が順次対応いたします。\n"
+                                  "可能な場合はスクリーンショット、メッセージリンクを添付して下さい。\n"
+                                  "### メッセージリンクのコピー方法\n"
+                                  "メッセージリンクをコピーしたいメッセージを右クリックし、「メッセージリンクをコピー」を選択します"
+                                  "チケットを閉じたい場合は 🔒をクリックしてください。")
+            container = ui.Container(text)
+            self.add_item(mention)
+            self.add_item(container)
+
+        button = CloseButton()
+        self.add_item(button)
 
 
 async def ticket_close(interaction: discord.Interaction):
     bucket = COOLDOWN.get_bucket(interaction.message)
-    retry_after = bucket.update_rate_limit()
+    if ENV == "prod":
+        retry_after = bucket.update_rate_limit()
+    else:
+        retry_after = None
     category = DICT_CATEGORY[interaction.channel.category_id]
     to_move = DICT_CLOSE_CATEGORY[category]
     if retry_after:
@@ -310,24 +351,30 @@ async def ticket_close(interaction: discord.Interaction):
                               colour=Color_WARN)
         await interaction.channel.send(embed=embed)  # noqa
         # ツールの送信
-        view = ToolButtonView()
-        tool_embed = discord.Embed(title="", description="🔓 チケットを再開"
-                                                         "\n--以下スタッフ専用--"
-                                                         "\n📑 チケットを保存"
-                                                         "\n🗑️ チケットを削除")
-        await interaction.channel.send(embed=tool_embed, view=view)  # noqa
+        await interaction.channel.send(view=ToolButtonView())  # noqa
 
 
-class ToolButtonView(discord.ui.View):
+class ToolButtonView(ui.LayoutView):
     """ボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey, custom_id="ticket_open")  # noqa
-    async def ticket_open_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    text = ui.TextDisplay("🔓 チケットを再開\n"
+                          "--以下スタッフ専用--\n"
+                          "📑 チケットを保存\n"
+                          "\️ チケットを削除")
+    container = ui.Container(text)
+    action_row = ui.ActionRow()
+
+    @action_row.button(label="チケットを再開", emoji="🔓", style=discord.ButtonStyle.grey,
+                       custom_id="ticket_open")  # noqa
+    async def ticket_open_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
-        retry_after = bucket.update_rate_limit()
+        if ENV == "prod":
+            retry_after = bucket.update_rate_limit()
+        else:
+            retry_after = None
         if retry_after:
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
                                         color=Color_ERROR)
@@ -368,10 +415,14 @@ class ToolButtonView(discord.ui.View):
             await interaction.channel.send(embed=embed)  # noqa
             await interaction.message.delete()
 
-    @discord.ui.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey, custom_id="ticket_save")  # noqa
-    async def ticket_save_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @action_row.button(label="チケットを保存", emoji="📑", style=discord.ButtonStyle.grey,
+                       custom_id="ticket_save")  # noqa
+    async def ticket_save_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
-        retry_after = bucket.update_rate_limit()
+        if ENV == "prod":
+            retry_after = bucket.update_rate_limit()
+        else:
+            retry_after = None
         if retry_after:
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
                                         color=Color_ERROR)
@@ -414,10 +465,14 @@ class ToolButtonView(discord.ui.View):
                                   colour=Color_OK)
             await interaction.channel.send(embed=embed)  # noqa
 
-    @discord.ui.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey, custom_id="ticket_delete")  # noqa
-    async def ticket_delete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @action_row.button(label="チケットを削除", emoji="🗑️", style=discord.ButtonStyle.grey,
+                       custom_id="ticket_delete")  # noqa
+    async def ticket_delete_button(self, interaction: discord.Interaction, button: ui.Button):
         bucket = COOLDOWN.get_bucket(interaction.message)
-        retry_after = bucket.update_rate_limit()
+        if ENV == "prod":
+            retry_after = bucket.update_rate_limit()
+        else:
+            retry_after = None
         if retry_after:
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
                                         color=Color_ERROR)
@@ -445,7 +500,7 @@ class ToolButtonView(discord.ui.View):
             await interaction.channel.delete()
 
 
-class ClanForm(discord.ui.Modal, title="面談希望日時　申請フォーム"):
+class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     """フォームの実装"""
 
     def __init__(self, view):
@@ -454,44 +509,58 @@ class ClanForm(discord.ui.Modal, title="面談希望日時　申請フォーム"
 
     # フォームの入力項目の定義（最大5個）
 
-    clan_tag = discord.ui.TextInput(
-        label="クランタグ",
-        max_length=10,
+    clan_tag = ui.Label(
+        text="クランタグ",
+        component=discord.ui.TextInput(
+            max_length=10,
+        ),
     )
 
-    dt1 = discord.ui.TextInput(
-        label="第一希望（平日枠）",
-        placeholder="希望日と希望枠を入力してください。",
-        max_length=30,
+    dt1 = ui.Label(
+        text="第一希望（平日枠）",
+        description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
+        component=ui.TextInput(
+            placeholder="例：1/1 10:00～11:00",
+            max_length=30,
+        ),
     )
 
-    dt2 = discord.ui.TextInput(
-        label="第二希望（平日枠）",
-        placeholder="選択可能日は本日から7日後以降です。",
-        max_length=30,
+    dt2 = ui.Label(
+        text="第一希望（平日枠）",
+        description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
+        component=ui.TextInput(
+            placeholder="例：1/1 10:00～11:00",
+            max_length=30,
+        ),
     )
 
-    dt3 = discord.ui.TextInput(
-        label="第一希望（土日祝枠）",
-        placeholder="参加できない枠は不可と入力してください。",
-        max_length=30,
+    dt3 = ui.Label(
+        text="第一希望（平日枠）",
+        description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
+        component=ui.TextInput(
+            placeholder="例：1/1 10:00～11:00",
+            max_length=30,
+        ),
     )
 
-    dt4 = discord.ui.TextInput(
-        label="第二希望（土日祝枠）",
-        placeholder="例：1/1 10:00～11:00",
-        max_length=30,
+    dt4 = ui.Label(
+        text="第一希望（平日枠）",
+        description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
+        component=ui.TextInput(
+            placeholder="例：1/1 10:00～11:00",
+            max_length=30,
+        ),
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         """フォーム送信時の処理"""
         await interaction.response.defer()  # noqa
         # 担当者に送信
-        embed = discord.Embed(title=f"クラン{self.clan_tag.value}　面談希望日時")
-        embed.add_field(name="第一希望（平日枠）", value=self.dt1.value, inline=False)
-        embed.add_field(name="第二希望（平日枠）", value=self.dt2.value, inline=False)
-        embed.add_field(name="第一希望（土日祝枠）", value=self.dt3.value, inline=False)
-        embed.add_field(name="第二希望（土日祝枠）", value=self.dt4.value, inline=False)
+        embed = discord.Embed(title=f"クラン{self.clan_tag.component.value}　面談希望日時")
+        embed.add_field(name="第一希望（平日枠）", value=self.dt1.component.value, inline=False)
+        embed.add_field(name="第二希望（平日枠）", value=self.dt2.component.value, inline=False)
+        embed.add_field(name="第一希望（土日祝枠）", value=self.dt3.component.value, inline=False)
+        embed.add_field(name="第二希望（土日祝枠）", value=self.dt4.component.value, inline=False)
         channel = interaction.guild.get_channel(CLAN_MEET_ID)
         await channel.send(content=f"<@&{CLAN_STAFF_ROLE}>\n{interaction.channel.jump_url}", embed=embed)
         # フォームへのレスポンス
@@ -512,7 +581,8 @@ class ClanForm(discord.ui.Modal, title="面談希望日時　申請フォーム"
 async def setup(bot):
     """起動時のコグへの追加"""
     await bot.add_cog(Contact(bot))
-    bot.add_view(view=TicketDropdownView())
-    bot.add_view(view=ClanButtonView())
-    bot.add_view(view=CloseButtonView())
+    bot.add_view(view=CreateTicketView())
+    bot.add_view(view=ClanTicketView())
+    bot.add_view(view=GeneralTicketView())
+    bot.add_view(view=ReportTicketView())
     bot.add_view(view=ToolButtonView())

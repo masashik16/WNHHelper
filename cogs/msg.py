@@ -3,6 +3,7 @@ import os
 import re
 
 import discord
+from discord import ui
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -330,7 +331,7 @@ class Message(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class MsgTransferDropdownView(discord.ui.View):
+class MsgTransferDropdownView(ui.View):
     """メッセージをBOTとして転送"""
 
     def __init__(self, message: discord.Message, timeout=360):
@@ -343,8 +344,8 @@ class MsgTransferDropdownView(discord.ui.View):
         self.remove_item(self.set_role)
         self.remove_item(self.transfer_message_button)  # noqa
 
-    @discord.ui.select(
-        cls=discord.ui.Select,
+    @ui.select(
+        cls=ui.Select,
         placeholder="転送先の種類を選択",
         options=[
             discord.SelectOption(label="チャンネル", value="channel"),
@@ -352,7 +353,7 @@ class MsgTransferDropdownView(discord.ui.View):
             discord.SelectOption(label="特定のロールを持つユーザーのDM", value="role"),
         ],
     )
-    async def set_type(self, interaction: discord.Interaction, select: discord.ui.Select):
+    async def set_type(self, interaction: discord.Interaction, select: ui.Select):
         if select.values[0] == "channel":
             self.add_item(self.set_channel)  # noqa
             self.type = "channel"
@@ -366,12 +367,12 @@ class MsgTransferDropdownView(discord.ui.View):
         await interaction.response.edit_message(content="転送先を選択してください。", view=self)  # noqa
 
     # noinspection PyTypeChecker
-    @discord.ui.select(
-        cls=discord.ui.ChannelSelect,
+    @ui.select(
+        cls=ui.ChannelSelect,
         placeholder="転送先のチャンネルを選択",
         channel_types=[discord.ChannelType.text, discord.ChannelType.news],
     )
-    async def set_channel(self, interaction: discord.Interaction, select: discord.ui.ChannelSelect):
+    async def set_channel(self, interaction: discord.Interaction, select: ui.ChannelSelect):
         self.send_list = select.values[0]
         transfer_to = self.send_list.name
         embed = discord.Embed()
@@ -382,12 +383,12 @@ class MsgTransferDropdownView(discord.ui.View):
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
-    @discord.ui.select(
-        cls=discord.ui.UserSelect,
+    @ui.select(
+        cls=ui.UserSelect,
         placeholder="転送先のユーザーを選択",
         max_values=25
     )
-    async def set_user(self, interaction: discord.Interaction, select: discord.ui.ChannelSelect):
+    async def set_user(self, interaction: discord.Interaction, select: ui.ChannelSelect):
         self.send_list = select.values
         transfer_to = None
         for user in self.send_list:
@@ -403,11 +404,11 @@ class MsgTransferDropdownView(discord.ui.View):
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
-    @discord.ui.select(
-        cls=discord.ui.RoleSelect,
+    @ui.select(
+        cls=ui.RoleSelect,
         placeholder="転送先のロールを選択",
     )
-    async def set_role(self, interaction: discord.Interaction, select: discord.ui.ChannelSelect):
+    async def set_role(self, interaction: discord.Interaction, select: ui.ChannelSelect):
         self.send_list = select.values[0]
         transfer_to = self.send_list.name
         embed = discord.Embed()
@@ -418,8 +419,8 @@ class MsgTransferDropdownView(discord.ui.View):
         await interaction.response.edit_message(  # noqa
             content="下記内容で転送します。よろしいですか？", embed=embed, view=self)
 
-    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
-    async def transfer_message_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
+    async def transfer_message_button(self, interaction: discord.Interaction, button: ui.Button):
         if self.type == "channel":
             channel = await self.send_list.fetch()
             if not self.message.embeds:
@@ -448,7 +449,7 @@ class MsgTransferDropdownView(discord.ui.View):
         await interaction.response.edit_message(content=None, embed=response_embed, view=None)  # noqa
 
 
-class CreateEmbedButton(discord.ui.View):
+class CreateEmbedButton(ui.View):
     """ボタンの実装"""
 
     def __init__(self, message: discord.Message, embed: discord.Embed):
@@ -456,14 +457,14 @@ class CreateEmbedButton(discord.ui.View):
         self.message = message
         self.embed = embed
 
-    @discord.ui.button(label="フィールドを追加", style=discord.ButtonStyle.blurple)  # noqa
-    async def add_field_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="フィールドを追加", style=discord.ButtonStyle.blurple)  # noqa
+    async def add_field_button(self, interaction: discord.Interaction, button: ui.Button):
         """ボタン押下時の処理"""
         # フォームの呼び出し
         await interaction.response.send_modal(AddEmbedFieldForm(message=self.message, embed=self.embed))  # noqa
 
 
-class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
+class CreateEmbedForm(ui.Modal, title="Embedを作成"):
     """フォームの実装"""
 
     def __init__(self):
@@ -471,33 +472,33 @@ class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
         super().__init__(timeout=600)
 
     # フォームの入力項目の定義（最大5個）
-    message_content = discord.ui.TextInput(
+    message_content = ui.TextInput(
         label="メッセージ_本文",
         style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
 
-    embed_title = discord.ui.TextInput(
+    embed_title = ui.TextInput(
         label="Embed_タイトル",
         max_length=256,
         required=False
     )
 
-    embed_description = discord.ui.TextInput(
+    embed_description = ui.TextInput(
         label="Embed_本文",
         style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
 
-    field1_name = discord.ui.TextInput(
+    field1_name = ui.TextInput(
         label="フィールド1_名前",
         max_length=256,
         required=False
     )
 
-    field1_value = discord.ui.TextInput(
+    field1_value = ui.TextInput(
         label="フィールド1_本文",
         style=discord.TextStyle.long,  # noqa
         max_length=4000,
@@ -531,7 +532,7 @@ class CreateEmbedForm(discord.ui.Modal, title="Embedを作成"):
         logger.info(f"フォーム「Embedフォーム_新規作成」でエラーが発生しました。\nエラー内容：{error}")
 
 
-class AddEmbedFieldForm(discord.ui.Modal, title="フィールドを追加"):
+class AddEmbedFieldForm(ui.Modal, title="フィールドを追加"):
     """フォームの実装"""
 
     def __init__(self, message: discord.Message, embed: discord.Embed):
@@ -541,26 +542,26 @@ class AddEmbedFieldForm(discord.ui.Modal, title="フィールドを追加"):
         self.embed = embed
 
     # フォームの入力項目の定義（最大5個）
-    field1_name = discord.ui.TextInput(
+    field1_name = ui.TextInput(
         label="フィールド1_名前",
         max_length=256,
         required=False
     )
 
-    field1_value = discord.ui.TextInput(
+    field1_value = ui.TextInput(
         label="フィールド1_本文",
         style=discord.TextStyle.long,  # noqa
         max_length=4000,
         required=False
     )
 
-    field2_name = discord.ui.TextInput(
+    field2_name = ui.TextInput(
         label="フィールド1_名前",
         max_length=256,
         required=False
     )
 
-    field2_value = discord.ui.TextInput(
+    field2_value = ui.TextInput(
         label="フィールド1_本文",
         style=discord.TextStyle.long,  # noqa
         max_length=4000,

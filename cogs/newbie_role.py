@@ -1,6 +1,7 @@
 import os
 
 import discord
+from discord import ui
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -74,7 +75,7 @@ class Newbie(commands.Cog):
                 logger.error(f"{mattari_member.id}でエラー")
             else:
                 # 戦闘数の照会と代入
-                wg_api_result = await api.wows_info(account_id, region)
+                wg_api_result = await api.wows_user_info(account_id, region)
                 nickname, battles = wg_api_result
                 # 戦闘数が3001以上の場合ロールを解除
                 if battles == "private" or battles > 3000:
@@ -88,7 +89,7 @@ class Newbie(commands.Cog):
                 logger.error(f"{gatsu_member.id}でエラー")
             else:
                 # 戦闘数の照会と代入
-                wg_api_result = await api.wows_info(account_id, region)
+                wg_api_result = await api.wows_user_info(account_id, region)
                 nickname, battles = wg_api_result
                 # 戦闘数が3001以上の場合ロールを解除
                 if battles == "private" or battles > 3000:
@@ -105,14 +106,14 @@ class Newbie(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class NewbieButton(discord.ui.View):
+class NewbieButton(ui.View):
     """ボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="まったり", emoji="🔵", style=discord.ButtonStyle.blurple, custom_id="mattari")  # noqa
-    async def button_mattari(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="まったり", emoji="🔵", style=discord.ButtonStyle.blurple, custom_id="mattari")  # noqa
+    async def button_mattari(self, interaction: discord.Interaction, button: ui.Button):
         """まったりロール用ボタン押下時の処理"""
         # ギルドとロールの取得
 
@@ -133,7 +134,7 @@ class NewbieButton(discord.ui.View):
             user_info_result = await db.search_user(interaction.user.id)
             discord_id, account_id, region = user_info_result
             # 戦闘数の照会と代入
-            wg_api_result = await api.wows_info(account_id, region)
+            wg_api_result = await api.wows_user_info(account_id, region)
             nickname, battles = wg_api_result
             # 戦績非公開の場合
             if battles == "private":
@@ -158,8 +159,8 @@ class NewbieButton(discord.ui.View):
                                                    color=Color_OK)
                     await interaction.followup.send(embed=response_embed, ephemeral=True)
 
-    @discord.ui.button(label="がつがつ", emoji="🟠", style=discord.ButtonStyle.blurple, custom_id="gatugatu")  # noqa
-    async def button_gatsu(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="がつがつ", emoji="🟠", style=discord.ButtonStyle.blurple, custom_id="gatugatu")  # noqa
+    async def button_gatsu(self, interaction: discord.Interaction, button: ui.Button):
         """がつがつロール用ボタン押下時の処理"""
         # ギルドとロールの取得
 
@@ -180,7 +181,7 @@ class NewbieButton(discord.ui.View):
             user_info_result = await db.search_user(interaction.user.id)
             discord_id, account_id, region = user_info_result
             # 戦闘数の照会と代入
-            wg_api_result = await api.wows_info(account_id, region)
+            wg_api_result = await api.wows_user_info(account_id, region)
             nickname, battles = wg_api_result
             # 戦績非公開の場合
             if battles == "private":

@@ -2,6 +2,7 @@ import os
 import time
 
 import discord
+from discord import ui
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -56,14 +57,14 @@ class Division(commands.Cog):
 """ボタンの実装"""
 
 
-class DivisionButton(discord.ui.View):
+class DivisionButton(ui.View):
     """ボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="分隊を募集する", style=discord.ButtonStyle.blurple, custom_id="div")  # noqa
-    async def division_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="分隊を募集する", style=discord.ButtonStyle.blurple, custom_id="div")  # noqa
+    async def division_button(self, interaction: discord.Interaction, button: ui.Button):
         """ボタン押下時の処理"""
         if interaction.user.is_timed_out():
             error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=Color_ERROR)
@@ -73,7 +74,7 @@ class DivisionButton(discord.ui.View):
             await interaction.response.send_modal(DivisionForm())  # noqa
 
 
-class DivisionForm(discord.ui.Modal, title="分隊募集フォーム"):
+class DivisionForm(ui.Modal, title="分隊募集フォーム"):
     """フォームの実装"""
 
     def __init__(self):
@@ -81,32 +82,32 @@ class DivisionForm(discord.ui.Modal, title="分隊募集フォーム"):
         super().__init__()
 
     # フォームの入力項目の定義（最大5個）
-    dtime = discord.ui.TextInput(
+    dtime = ui.TextInput(
         label="1.日時",
         placeholder="例：今日19:00~21:00",
         max_length=30,
     )
 
-    tier = discord.ui.TextInput(
+    tier = ui.TextInput(
         label="2. Tier（オペレーションの場合は名称）",
         placeholder="例：8～10",
         max_length=30,
     )
 
-    member_count = discord.ui.TextInput(
+    member_count = ui.TextInput(
         label="3.募集人数",
         placeholder="例：2人",
         max_length=30,
     )
 
-    newbie = discord.ui.TextInput(
+    newbie = ui.TextInput(
         label="4.初心者ですか？（無回答でもOK）",
         placeholder="はい or いいえ",
         max_length=30,
         required=False,
     )
 
-    other = discord.ui.TextInput(
+    other = ui.TextInput(
         label="5.その他注記事項（無回答でもOK）",
         style=discord.TextStyle.long,  # noqa
         placeholder="",

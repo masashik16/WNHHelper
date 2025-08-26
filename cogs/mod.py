@@ -3,6 +3,7 @@ import os
 import re
 
 import discord
+from discord import ui
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -880,7 +881,7 @@ class Moderation(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class SendAppealView(discord.ui.View):
+class SendAppealView(ui.View):
     """メッセージをBOTとして転送"""
 
     def __init__(self, user: discord.User, case_id: str, embed: discord.Embed, timeout=360):
@@ -889,8 +890,8 @@ class SendAppealView(discord.ui.View):
         self.case_id = case_id
         self.embed = embed
 
-    @discord.ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
-    async def send_appeal_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
+    async def send_appeal_button(self, interaction: discord.Interaction, button: ui.Button):
         guild = interaction.guild
         try:
             await self.user.send(embed=self.embed)
@@ -906,7 +907,7 @@ class SendAppealView(discord.ui.View):
         await interaction.response.edit_message(content=None, embed=response_embed, view=None)  # noqa
 
 
-class MessageReportForm(discord.ui.Modal, title="不適切なメッセージを報告"):
+class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
     """メッセージ報告フォームの実装"""
 
     def __init__(self, message):
@@ -914,14 +915,14 @@ class MessageReportForm(discord.ui.Modal, title="不適切なメッセージを�
         self.message = message
 
     # フォームの入力項目の定義（最大5個）
-    input_warn = discord.ui.TextInput(
+    input_warn = ui.TextInput(
         label="注意事項（入力しないでください）",
         style=discord.TextStyle.long,  # noqa
         placeholder="このフォームはメッセージの報告用です。不適切なアバターやニックネーム、VCでの行為の報告は、ユーザーを右クリックして「アプリ>ユーザーの報告」からお願いします。",
         max_length=1,
         required=False,
     )
-    input = discord.ui.TextInput(
+    input = ui.TextInput(
         label="報告内容の詳細",
         style=discord.TextStyle.long,  # noqa
         placeholder="例：〇〇に対する暴言を吐いている",
@@ -986,7 +987,7 @@ class MessageReportForm(discord.ui.Modal, title="不適切なメッセージを�
         logger.info(f"フォーム「メッセージの報告」でエラーが発生しました。\nエラー内容：{error}")
 
 
-class UserReportForm(discord.ui.Modal, title="不適切なユーザーを報告"):
+class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
     """ユーザー報告フォームの実装"""
 
     def __init__(self, user):
@@ -995,7 +996,7 @@ class UserReportForm(discord.ui.Modal, title="不適切なユーザーを報告"
         self.user = user
 
     # フォームの入力項目の定義（最大5個）
-    input_warn = discord.ui.TextInput(
+    input_warn = ui.TextInput(
         label="注意事項（入力しないでください）",
         style=discord.TextStyle.long,  # noqa
         placeholder="このフォームはユーザーの報告用です。報告したい特定のメッセージがある場合は、メッセージを右クリックして「アプリ>メッセージの報告」からお願いします。",
@@ -1003,7 +1004,7 @@ class UserReportForm(discord.ui.Modal, title="不適切なユーザーを報告"
         required=False,
     )
 
-    input = discord.ui.TextInput(
+    input = ui.TextInput(
         label="報告内容の詳細",
         style=discord.TextStyle.long,  # noqa
         placeholder="例：不適切なユーザー名を設定している",
