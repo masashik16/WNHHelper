@@ -58,7 +58,7 @@ class Commands1(commands.Cog):
             discord.app_commands.Choice(name="newbie_role", value="newbie_role"),
             discord.app_commands.Choice(name="rule", value="rule"),
             discord.app_commands.Choice(name="server", value="server"),
-            # discord.app_commands.Choice(name="test", value="test"),
+            discord.app_commands.Choice(name="test", value="test"),
         ])
     @app_commands.choices(
         sync_command=[
@@ -86,6 +86,17 @@ class Commands1(commands.Cog):
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
+
+    @app_commands.command(description="プログラムを終了")
+    @app_commands.check(check_developer)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def shutdown(self, interaction: discord.Interaction):
+        from server import shutdown_server
+        response_embed = discord.Embed(description=f"ℹ️ シャットダウンを開始しました", color=Color_OK)
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+        await self.bot.close()
+        shutdown_server()
 
     @app_commands.command(description="動的タイムスタンプ生成")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)

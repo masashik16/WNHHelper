@@ -2,6 +2,7 @@ import os
 
 import discord
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -32,23 +33,9 @@ class Auth(commands.Cog):
 
     async def create_message(self, interaction: discord.Interaction):
         """認証用メッセージを作成"""
-        # ドロップダウンを含むビューを作成
-        view = AuthButtonView()
-        # Embedの作成
-        embed = discord.Embed(title="認証について",
-                              description="このサーバーでは、Discordアカウント/Wargaming IDによる認証が必須となっています。"
-                                          "\n下のリストからご自身のWoWSのメインアカウントのサーバーを選択し、同アカウントでログインしてください。"
-                                          "\n**（メインアカウントはご自身が保有するWoWSアカウントの中で一番戦闘数が多いものとします）**")
-        embed.add_field(name="取得する情報について",
-                        value="本サーバーでは運営のため以下の情報を収集します。"
-                              "\nWargamingアカウントに関連する情報"
-                              "\n・プレイヤーID\n・IGN\n・戦闘数"
-                              "\nDiscordアカウントに関連する情報"
-                              "\n・ユーザーID\n・ユーザー名"
-                              "\n\nプレイヤーID/ユーザーIDは各アカウントに割り振られる一意のIDであり、メールアドレス等ではありません。")
         # # ビューを含むメッセージを送信
         channel = interaction.channel
-        await channel.send(embed=embed, view=view)
+        await channel.send(view=AuthMessageView())
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
@@ -134,7 +121,7 @@ class Auth(commands.Cog):
             # WoWSのプロフィールURLの生成
             wows_url = await get_wows_url(account_id, region)
             # 戦闘数の照会と代入
-            wg_api_result = await api.wows_info(account_id, region)
+            wg_api_result = await api.wows_user_info(account_id, region)
             nickname, battles = wg_api_result
             # 対象ユーザーのアバターと表示名の取得
             avatar = user.display_avatar.url
@@ -212,14 +199,29 @@ class Auth(commands.Cog):
                          f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
 
 
-class AuthButtonView(discord.ui.View):
-    """ボタンの実装"""
-
-    def __init__(self):
+class AuthMessageView(ui.LayoutView):
+    def __init__(self) -> None:
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="認証はこちら", style=discord.ButtonStyle.green, custom_id="Auth_button")  # noqa
-    async def auth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    text1 = ui.TextDisplay("## 認証について\n"
+                           "本サーバーでは、DiscordアカウントおよびWargaming IDによる認証が必須となっています。\n"
+                           "認証ボタンを押した後、WoWSのメインアカウントでログインしてください。\n"
+                           "**（メインアカウントはご自身が保有するWoWSアカウントの中で一番戦闘数が多いものとします）**")
+    text2 = ui.TextDisplay("### 取得する情報について\n"
+                           "本サーバーでは運営のため以下の情報を収集します。\n"
+                           "* Wargamingアカウントに関連する情報\n"
+                           "  * SPA ID（数字からなる各プレイヤー固有のID）\n"
+                           "  * IGN\n"
+                           "  * WoWSのプレイ状況に関するデータ\n"
+                           "* Discordアカウントに関連する情報\n"
+                           "  * Discord ID（数字からなる各ユーザー固有のID）\n"
+                           "  * Discord ユーザー名")
+    container = ui.Container(text1, text2)
+
+    action_row = ui.ActionRow()
+
+    @action_row.button(label="認証はこちら", style=discord.ButtonStyle.green, custom_id="Auth_button")  # noqa
+    async def auth_button(self, interaction: discord.Interaction, button: ui.Button):
         """認証ボタン押下時の処理"""
         # ボタンへのレスポンス
         link = wg_auth_link()
@@ -334,4 +336,4 @@ async def setup(bot):
     """起動時のコグへの追加"""
     await bot.add_cog(Auth(bot))
     # bot.add_view(view=AuthDropdownView())
-    bot.add_view(view=AuthButtonView())
+    bot.add_view(view=AuthMessageView())

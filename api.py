@@ -58,7 +58,7 @@ async def wows_account_search(account_id, nickname):
         return "ERROR"
 
 
-async def wows_info(account_id, region):
+async def wows_user_info(account_id, region):
     """WG APIの呼び出し"""
     url = f"https://api.worldofwarships.{TLD[region]}/wows/account/info/"
     params = {"application_id": APPLICATION_ID, "account_id": account_id,

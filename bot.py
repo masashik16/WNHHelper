@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import sys
 import time
@@ -8,8 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import db
-from logs import logger
-
+from logs import handler, logger
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -22,7 +22,7 @@ MY_GUILD = discord.Object(id=GUILD_ID)
 # 読み込むCogの名前を格納
 INITIAL_EXTENSIONS = [
     "cogs.auth",
-    # "cogs.contact",
+    "cogs.contact",
     "cogs.cmd1",
     # "cogs.cmd2",
     # "cogs.event",
@@ -30,9 +30,9 @@ INITIAL_EXTENSIONS = [
     # "cogs.division",
     # "cogs.give_take_role",
     # "cogs.mod",
-    # "cogs.msg"
+    "cogs.msg",
     # "cogs.newbie_role",
-    # "cogs.rule",
+    "cogs.rule",
     "cogs.test"
 ]
 
@@ -67,13 +67,12 @@ class MyBot(commands.Bot):
             await db.save_question_log(thread.owner_id, action_datetime)
 
 
-
 # botのインスタンス化、および、起動処理
 if __name__ == "__main__":
     from server import run_server
     bot = MyBot()
+    discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
     loop = asyncio.get_event_loop()
-    loop.create_task(bot.start(TOKEN))
-    run_server(bot, loop)
-    loop.run_forever()
-    loop.close()
+    discord_task = loop.create_task(bot.start(TOKEN))
+    server_task = run_server(bot, loop)
+    loop.run_until_complete(asyncio.gather(discord_task, server_task))
