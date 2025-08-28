@@ -2,6 +2,8 @@ import datetime
 import importlib
 import os
 import statistics
+import sys
+import time
 
 import discord
 from dateutil.relativedelta import *
@@ -76,6 +78,7 @@ class Commands1(commands.Cog):
             server.run_server(self.bot, self.bot.loop)
         else:
             cog = f"cogs.{cog_name}"
+            sys.modules[cog] = importlib.reload(sys.modules[cog])
             guild = self.bot.get_guild(GUILD_ID)
             await self.bot.reload_extension(cog)
             if sync_command == 1:
@@ -92,11 +95,17 @@ class Commands1(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def shutdown(self, interaction: discord.Interaction):
-        from server import shutdown_server
+        from server import shutdown_server, server_task
         response_embed = discord.Embed(description=f"ℹ️ シャットダウンを開始しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-        await self.bot.close()
         shutdown_server()
+        while True:
+            server_active = server_task.done()  # noqa
+            if server_active is False:
+                break
+            time.sleep(3)
+        await self.bot.close()
+        sys.exit()
 
     @app_commands.command(description="動的タイムスタンプ生成")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
