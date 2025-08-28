@@ -61,6 +61,7 @@ class MyBot(commands.Bot):
         logger.info("接続しました")
         print("接続しました")
 
+
     async def on_thread_create(self, thread):
         if thread.parent_id == 1054002378984149003:
             action_datetime = time.time()
@@ -73,6 +74,7 @@ if __name__ == "__main__":
     bot = MyBot()
     discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
     loop = asyncio.get_event_loop()
-    discord_task = loop.create_task(bot.start(TOKEN))
-    server_task = run_server(bot, loop)
-    loop.run_until_complete(asyncio.gather(discord_task, server_task))
+    loop.create_task(bot.start(TOKEN))
+    run_server(bot, loop)
+    loop.run_forever()
+

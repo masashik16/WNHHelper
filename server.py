@@ -32,7 +32,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # Python 3.14以降でos.reload_environ()とともに変更
 # DISALLOW_NETWORKS = os.environ.get("DISALLOW_NETWORKS").replace(" ", "").split(",")
 DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22",
-                     "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24"]
+                     "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24", "185.177.72.0/24"]
 
 hypercorn_access_logger = logging.getLogger("server.access")
 hypercorn_access_logger.addHandler(handler)
@@ -41,6 +41,7 @@ hypercorn_error_logger = logging.getLogger("server.error")
 hypercorn_error_logger.addHandler(handler)
 hypercorn_error_logger.setLevel(logging.ERROR)
 shutdown_event = asyncio.Event()
+
 
 
 class App(Flask):
@@ -71,6 +72,7 @@ class App(Flask):
 app = None
 bot_obj = None
 public_url = None
+server_task = None
 _app = App(__name__, static_url_path="/")
 sess = Session()
 
@@ -177,12 +179,13 @@ def run_server(bot, loop):
     """サーバーの起動"""
     global app
     global bot_obj
+    global server_task
     bot_obj = bot
 
     app = create_app(bot, loop)
     ctx = app.app_context()
     ctx.push()
     print("サーバー起動中")
-    task = loop.create_task(
+    server_task = loop.create_task(
         app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False, shutdown_trigger=shutdown_event.wait))  # noqa
-    return task
+    return
