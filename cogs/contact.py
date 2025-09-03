@@ -363,7 +363,7 @@ class ToolButtonView(ui.LayoutView):
     text = ui.TextDisplay("🔓 チケットを再開\n"
                           "--以下スタッフ専用--\n"
                           "📑 チケットを保存\n"
-                          "\️ チケットを削除")
+                          "🗑️ チケットを削除")
     container = ui.Container(text)
     action_row = ui.ActionRow()
 
