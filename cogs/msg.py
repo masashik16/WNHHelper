@@ -273,6 +273,7 @@ class Message(commands.Cog):
             await interaction.response.send_message("このサーバーのメッセージではありません", ephemeral=True)  # noqa
         # WNH内のメッセージリンクの場合
         else:
+            await interaction.response.defer(ephemeral=True)  # noqa
             # 値の代入とチャンネル・メッセージの取得
             guild = self.bot.get_guild(GUILD_ID)
             channel_id = int(result.group(1))
@@ -298,7 +299,7 @@ class Message(commands.Cog):
             )
             #
             # Embedを作成
-            await interaction.response.send_message(file=transcript_file, ephemeral=True)  # noqa
+            await interaction.followup.send(file=transcript_file, ephemeral=True)  # noqa
 
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
     @app_commands.guilds(GUILD_ID)
