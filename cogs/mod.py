@@ -257,6 +257,10 @@ class Moderation(commands.Cog):
             dm_embed.add_field(name="内容に関する指示",
                                value=f"本警告から24時間以内に内容の解消が行われない場合、警告が発行されます。",
                                inline=False)
+        elif warn_type_1 == "違反投稿に対する返信（禁止行為に類する行為）":
+            dm_embed.add_field(name="違反投稿に対する返信は、更なる違反投稿を誘発するため、禁止されています。",
+                               value=f"違反投稿を見つけた際は、返信することなく、WNH運営チームまでご連絡ください。\nなお、本厳重注意に伴うサーバーの利用制限等はありません。",
+                               inline=False)
         dm_embed.add_field(name="この厳重注意に対する質問・申立",
                            value=f"この厳重注意に対する質問・申立は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c",
                            inline=False)
