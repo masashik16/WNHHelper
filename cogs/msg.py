@@ -122,7 +122,6 @@ class Message(commands.Cog):
         """DM履歴の確認"""
         await interaction.response.defer(ephemeral=True)  # noqa
         dm = await user.create_dm()
-        # embed = discord.Embed(title="DM履歴")
         messages = [message async for message in dm.history(limit=200, oldest_first=True)]
         if messages:
             dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
