@@ -1,6 +1,7 @@
 import html
 
 from chat_exporter.ext.discord_import import discord
+
 from chat_exporter.ext.html_generator import (
     fill_out,
     embed_body,
@@ -112,7 +113,7 @@ class Embed:
         self.author = f'<a class="chatlog__embed-author-name-link" href="{self.embed.author.url}">{self.author}</a>' \
             if (
                 self.embed.author and self.embed.author.url != self.check_against
-        ) else self.author
+            ) else self.author
 
         author_icon = await fill_out(self.guild, embed_author_icon, [
             ("AUTHOR", self.author, PARSE_MODE_NONE),

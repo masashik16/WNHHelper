@@ -1,39 +1,42 @@
 import datetime
 import html
-import re
 import traceback
+
+import re
 from typing import List, Optional
 
 import pytz
 
-from chat_exporter.construct.assets.component import Component
 from chat_exporter.construct.attachment_handler import AttachmentHandler
-from chat_exporter.construct.message import gather_messages
-from chat_exporter.ext.cache import clear_cache
 from chat_exporter.ext.discord_import import discord
+
+from chat_exporter.construct.message import gather_messages
+from chat_exporter.construct.assets.component import Component
+
+from chat_exporter.ext.cache import clear_cache
+from chat_exporter.parse.mention import pass_bot
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     fill_out, total, channel_topic, meta_data_temp, fancy_time, channel_subject, PARSE_MODE_NONE, PARSE_MODE_HTML_SAFE
 )
-from chat_exporter.parse.mention import pass_bot
 
 
 class TranscriptDAO:
     html: str
 
     def __init__(
-            self,
-            channel: discord.TextChannel,
-            limit: Optional[int],
-            messages: Optional[List[discord.Message]],
-            pytz_timezone,
-            military_time: bool,
-            fancy_times: bool,
-            before: Optional[datetime.datetime],
-            after: Optional[datetime.datetime],
-            support_dev: bool,
-            bot: Optional[discord.Client],
-            attachment_handler: Optional[AttachmentHandler],
+        self,
+        channel: discord.TextChannel,
+        limit: Optional[int],
+        messages: Optional[List[discord.Message]],
+        pytz_timezone,
+        military_time: bool,
+        fancy_times: bool,
+        before: Optional[datetime.datetime],
+        after: Optional[datetime.datetime],
+        support_dev: bool,
+        bot: Optional[discord.Client],
+        attachment_handler: Optional[AttachmentHandler],
     ):
         self.channel = channel
         self.messages = messages
@@ -73,22 +76,22 @@ class TranscriptDAO:
         guild_name = html.escape(self.channel.guild.name)
 
         timezone = pytz.timezone(self.pytz_timezone)
-        if self.military_time:
-            # time_now = datetime.datetime.now(timezone).strftime("%Y/%m/%d %H:%M:%S (%Z)")
-            local_time = datetime.datetime.now(timezone)
-            day_name = "月火水木金土日"
-            wd = day_name[local_time.weekday()]
-            dt1 = local_time.strftime("%Y/%m/%d")
-            dt2 = local_time.strftime("%H:%M:%S (%Z)")
-            time_now = f"{dt1} ({wd}) {dt2}"
-        else:
-            time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
+        # if self.military_time:
+        #     time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
+        # else:
+        #     time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
+        local_time = datetime.datetime.now(timezone)
+        day_name = "月火水木金土日"
+        weekday = day_name[local_time.weekday()]
+        date = local_time.strftime("%Y/%m/%d")
+        time = local_time.strftime("%H:%M:%S")
+        time_now = f"{date} ({weekday}) {time}"
 
         meta_data_html: str = ""
         for data in meta_data:
-            creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%b %d, %Y")
+            creation_time = meta_data[int(data)][1].astimezone(timezone).strftime("%Y/%m/%d")
             joined_time = (
-                meta_data[int(data)][5].astimezone(timezone).strftime("%b %d, %Y")
+                meta_data[int(data)][5].astimezone(timezone).strftime("%Y/%m/%d")
                 if meta_data[int(data)][5] else "Unknown"
             )
 
@@ -111,16 +114,17 @@ class TranscriptDAO:
                 ("MESSAGE_COUNT", str(meta_data[int(data)][4]))
             ])
 
-        if self.military_time:
-            # channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%Y/%m/%d (%H:%M:%S)")
-            local_time = self.channel.created_at.astimezone(timezone)
-            day_name = "月火水木金土日"
-            wd = day_name[local_time.weekday()]
-            dt1 = local_time.strftime("%Y/%m/%d")
-            dt2 = local_time.strftime("%H:%M:%S")
-            channel_creation_time = f"{dt1} ({wd}) {dt2}"
-        else:
-            channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%I:%M:%S %p)")
+        # if self.military_time:
+        #     channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%H:%M:%S)")
+        # else:
+        #     channel_creation_time = self.channel.created_at.astimezone(timezone).strftime("%b %d, %Y (%I:%M:%S %p)")
+        local_time = self.channel.created_at.astimezone(timezone)
+        day_name = "月火水木金土日"
+        weekday = day_name[local_time.weekday()]
+        date = local_time.strftime("%Y/%m/%d")
+        time = local_time.strftime("%H:%M:%S")
+        channel_creation_time = f"{date} ({weekday}) {time}"
+
 
         raw_channel_topic = (
             self.channel.topic if isinstance(self.channel, discord.TextChannel) and self.channel.topic else ""
@@ -151,10 +155,11 @@ class TranscriptDAO:
         _fancy_time = ""
 
         if self.fancy_times:
-            if self.military_time:
-                time_format = "HH:mm"
-            else:
-                time_format = "hh:mm A"
+            # if self.military_time:
+            #     time_format = "HH:mm"
+            # else:
+            #     time_format = "hh:mm A"
+            time_format = "HH:mm"
 
             _fancy_time = await fill_out(self.channel.guild, fancy_time, [
                 ("TIME_FORMAT", time_format, PARSE_MODE_NONE),
@@ -176,7 +181,7 @@ class TranscriptDAO:
             ("CHANNEL_ID", str(self.channel.id), PARSE_MODE_NONE),
             ("MESSAGE_PARTICIPANTS", str(len(meta_data)), PARSE_MODE_NONE),
             ("FANCY_TIME", _fancy_time, PARSE_MODE_NONE),
-            ("SD", "", PARSE_MODE_NONE),
+            ("SD", sd, PARSE_MODE_NONE),
             ("SERVER_NAME_SAFE", f"{guild_name}", PARSE_MODE_HTML_SAFE),
             ("CHANNEL_NAME_SAFE", f"{html.escape(self.channel.name)}", PARSE_MODE_HTML_SAFE),
         ])
