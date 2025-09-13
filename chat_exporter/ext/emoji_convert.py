@@ -29,12 +29,13 @@
 #                                                                                #
 # Github: https://github.com/glasnt/emojificate                                  #
 ##################################################################################
-import aiohttp
-import emoji
 import unicodedata
 from grapheme import graphemes
+import emoji
+import aiohttp
 
 from chat_exporter.ext.cache import cache
+
 
 cdn_fmt = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/{codepoint}.png"
 

@@ -102,5 +102,5 @@ class Attachment:
                 return DiscordUtils.file_attachment_document
             elif extension in archive_types:
                 return DiscordUtils.file_attachment_archive
-
+        
         return DiscordUtils.file_attachment_unknown

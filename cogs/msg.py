@@ -1,10 +1,11 @@
+import datetime
 import io
 import os
 import re
 
 import discord
-from discord import ui
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -121,28 +122,24 @@ class Message(commands.Cog):
         """DM履歴の確認"""
         await interaction.response.defer(ephemeral=True)  # noqa
         dm = await user.create_dm()
-        embed = discord.Embed(title="DM履歴")
-        async for message in dm.history(limit=200):
-            if message.embeds:
-                msg_embed = message.embeds[0]
-                if not msg_embed.fields or msg_embed.fields[0].name != "ケース番号":
-                    embed.add_field(name=f"<t:{int(message.created_at.timestamp())}:F>",
-                                    value=f"投稿者：{message.author.name}\nEmbedタイトル：{msg_embed.title}",
-                                    inline=False)
-                else:
-                    embed.add_field(name=f"<t:{int(message.created_at.timestamp())}:F>",
-                                    value=f"投稿者：{message.author.name}\nEmbedタイトル：{msg_embed.title}\nケース番号：{msg_embed.fields[0].value}",
-                                    inline=False)
-            elif message.content == "":
-                embed.add_field(name=f"<t:{int(message.created_at.timestamp())}:F>",
-                                value=f"投稿者：{message.author.name}\n内容：ファイルのみ",
-                                inline=False)
-            else:
-                embed.add_field(name=f"<t:{int(message.created_at.timestamp())}:F>",
-                                value=f"投稿者：{message.author.name}\n内容：{message.content}",
-                                inline=False)
+        # embed = discord.Embed(title="DM履歴")
+        messages = [message async for message in dm.history(limit=200, oldest_first=True)]
+        if messages:
+            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+            dt_str = dt.strftime("%Y/%m/%d %H:%M")
+            thread_message = await interaction.channel.send(f"DM履歴 - {user.mention} - {dt_str}取得")
+            thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得", message=thread_message)
+            for message in messages:
+                create_time = message.created_at.astimezone(datetime.timezone(datetime.timedelta(hours=9)))
+                create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
+                await thread.send(f"------------------------------\n"
+                                  f"送信者：{message.author.display_name}\n"
+                                  f"送信日時：{create_time_str}")
+                await message.forward(thread)
+        else:
+            print("DM履歴が存在しませんでした。")
         # コマンドへのレスポンス
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send("DM履歴の取得が完了しました。")
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")

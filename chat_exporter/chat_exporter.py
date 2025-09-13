@@ -2,15 +2,15 @@ import datetime
 import io
 from typing import List, Optional
 
-from chat_exporter.construct.attachment_handler import AttachmentHandler, AttachmentToLocalFileHostHandler, AttachmentToDiscordChannelHandler
 from chat_exporter.construct.transcript import Transcript
 from chat_exporter.ext.discord_import import discord
+from chat_exporter.construct.attachment_handler import AttachmentHandler, AttachmentToLocalFileHostHandler, AttachmentToDiscordChannelHandler
 
 
 async def quick_export(
-        channel: discord.TextChannel,
-        guild: Optional[discord.Guild] = None,
-        bot: Optional[discord.Client] = None,
+    channel: discord.TextChannel,
+    guild: Optional[discord.Guild] = None,
+    bot: Optional[discord.Client] = None,
 ):
     """
     Create a quick export of your Discord channel.
@@ -34,11 +34,11 @@ async def quick_export(
             fancy_times=True,
             before=None,
             after=None,
-            support_dev=True,
+            support_dev=False,
             bot=bot,
             attachment_handler=None
-        ).export()
-    ).html
+            ).export()
+        ).html
 
     if not transcript:
         return
@@ -53,17 +53,17 @@ async def quick_export(
 
 
 async def export(
-        channel: discord.TextChannel,
-        limit: Optional[int] = None,
-        tz_info="UTC",
-        guild: Optional[discord.Guild] = None,
-        bot: Optional[discord.Client] = None,
-        military_time: Optional[bool] = True,
-        fancy_times: Optional[bool] = True,
-        before: Optional[datetime.datetime] = None,
-        after: Optional[datetime.datetime] = None,
-        support_dev: Optional[bool] = True,
-        attachment_handler: Optional[AttachmentHandler] = None,
+    channel: discord.TextChannel,
+    limit: Optional[int] = None,
+    tz_info="UTC",
+    guild: Optional[discord.Guild] = None,
+    bot: Optional[discord.Client] = None,
+    military_time: Optional[bool] = True,
+    fancy_times: Optional[bool] = True,
+    before: Optional[datetime.datetime] = None,
+    after: Optional[datetime.datetime] = None,
+    support_dev: Optional[bool] = False,
+    attachment_handler: Optional[AttachmentHandler] = None,
 ):
     """
     Create a customised transcript of your Discord channel.
@@ -101,15 +101,15 @@ async def export(
 
 
 async def raw_export(
-        channel: discord.TextChannel,
-        messages: List[discord.Message],
-        tz_info="UTC",
-        guild: Optional[discord.Guild] = None,
-        bot: Optional[discord.Client] = None,
-        military_time: Optional[bool] = False,
-        fancy_times: Optional[bool] = True,
-        support_dev: Optional[bool] = True,
-        attachment_handler: Optional[AttachmentHandler] = None,
+    channel: discord.TextChannel,
+    messages: List[discord.Message],
+    tz_info="UTC",
+    guild: Optional[discord.Guild] = None,
+    bot: Optional[discord.Client] = None,
+    military_time: Optional[bool] = False,
+    fancy_times: Optional[bool] = True,
+    support_dev: Optional[bool] = False,
+    attachment_handler: Optional[AttachmentHandler] = None,
 ):
     """
     Create a customised transcript with your own captured Discord messages

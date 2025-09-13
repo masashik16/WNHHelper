@@ -24,7 +24,7 @@ INITIAL_EXTENSIONS = [
     "cogs.auth",
     "cogs.contact",
     "cogs.cmd1",
-    # "cogs.cmd2",
+    "cogs.cmd2",
     # "cogs.event",
     # "cogs.discord_event",
     # "cogs.division",

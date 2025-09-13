@@ -1,15 +1,19 @@
 import html
-from datetime import timedelta
-from typing import List, Optional
+import io
+import traceback
+from typing import List, Optional, Union
 
+import aiohttp
 from pytz import timezone
+from datetime import timedelta
+
+from chat_exporter.construct.attachment_handler import AttachmentHandler
+from chat_exporter.ext.discord_import import discord
 
 from chat_exporter.construct.assets import Attachment, Component, Embed, Reaction
-from chat_exporter.construct.attachment_handler import AttachmentHandler
-from chat_exporter.ext.cache import cache
-from chat_exporter.ext.discord_import import discord
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.discriminator import discriminator
+from chat_exporter.ext.cache import cache
 from chat_exporter.ext.html_generator import (
     fill_out,
     bot_tag,
@@ -41,7 +45,7 @@ def _gather_user_bot(author: discord.Member):
 
 
 def _set_edit_at(message_edited_at):
-    return f'<span class="chatlog__reference-edited-timestamp" data-timestamp="{message_edited_at}">(edited)</span>'
+    return f'<span class="chatlog__reference-edited-timestamp" data-timestamp="{message_edited_at}">(編集済)</span>'
 
 
 class MessageConstruct:
@@ -57,15 +61,15 @@ class MessageConstruct:
     interaction: str = ""
 
     def __init__(
-            self,
-            message: discord.Message,
-            previous_message: Optional[discord.Message],
-            pytz_timezone,
-            military_time: bool,
-            guild: discord.Guild,
-            meta_data: dict,
-            message_dict: dict,
-            attachment_handler: Optional[AttachmentHandler]
+        self,
+        message: discord.Message,
+        previous_message: Optional[discord.Message],
+        pytz_timezone,
+        military_time: bool,
+        guild: discord.Guild,
+        meta_data: dict,
+        message_dict: dict,
+        attachment_handler: Optional[AttachmentHandler]
     ):
         self.message = message
         self.previous_message = previous_message
@@ -74,15 +78,16 @@ class MessageConstruct:
         self.guild = guild
         self.message_dict = message_dict
         self.attachment_handler = attachment_handler
-        self.time_format = "%A, %e %B %Y %I:%M %p"
-        if self.military_time:
-            self.time_format = "%Y/%m/%d %H:%M"
+        # self.time_format = "%A, %e %B %Y %I:%M %p"
+        # if self.military_time:
+        #     self.time_format = "%A, %e %B %Y %H:%M"
+        self.time_format = "%Y/%m/%d %H:%M"
 
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
 
     async def construct_message(
-            self,
+        self,
     ) -> (str, dict):
         if discord.MessageType.pins_add == self.message.type:
             await self.build_pin()
@@ -296,6 +301,7 @@ class MessageConstruct:
             ("COMPONENTS", self.components, PARSE_MODE_NONE),
             ("EMOJI", self.reactions, PARSE_MODE_NONE),
             ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
+            # ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
             ("TIME", self.message_created_at.split(maxsplit=4)[2], PARSE_MODE_NONE),
         ])
 
@@ -329,24 +335,23 @@ class MessageConstruct:
             if not self.message.created_at.tzinfo:
                 time = timezone("UTC").localize(time)
 
-            if self.military_time:
-                # default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%Y/%m/%d %H:%M")
-                local_time = time.astimezone(timezone(self.pytz_timezone))
-                day_name = "月火水木金土日"
-                wd = day_name[local_time.weekday()]
-                dt1 = local_time.strftime("%Y/%m/%d")
-                dt2 = local_time.strftime("%H:%M")
-                default_timestamp = f"{dt1} ({wd}) {dt2}"
-            else:
-                default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %I:%M %p")
+            # if self.military_time:
+            #     default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %H:%M")
+            # else:
+            #     default_timestamp = time.astimezone(timezone(self.pytz_timezone)).strftime("%d-%m-%Y %I:%M %p")
+            local_time = time.astimezone(timezone(self.pytz_timezone))
+            day_name = "月火水木金土日"
+            weekday = day_name[local_time.weekday()]
+            date = local_time.strftime("%Y/%m/%d")
+            time = local_time.strftime("%H:%M")
+            default_timestamp = f"{date} ({weekday}) {time}"
 
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
                 ("REFERENCE", self.message.reference if self.message.reference else self.interaction,
                  PARSE_MODE_NONE),
                 ("AVATAR_URL", str(avatar_url), PARSE_MODE_NONE),
-                ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
-                 PARSE_MODE_NONE),
+                ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
                 ("USER_ID", str(self.message.author.id)),
                 ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
                 ("USER_ICON", await self._gather_user_icon(self.message.author), PARSE_MODE_NONE),
@@ -369,12 +374,9 @@ class MessageConstruct:
             ("PIN_URL", DiscordUtils.pinned_message_icon, PARSE_MODE_NONE),
             ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
             ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
-             PARSE_MODE_NONE),
+            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
-            (
-                "REF_MESSAGE_ID", str(self.message.reference.message_id) if self.message.reference else "",
-                PARSE_MODE_NONE)
+            ("REF_MESSAGE_ID", str(self.message.reference.message_id) if self.message.reference else "", PARSE_MODE_NONE)
         ])
 
     async def build_thread_template(self):
@@ -384,8 +386,7 @@ class MessageConstruct:
             ("THREAD_NAME", self.message.content, PARSE_MODE_NONE),
             ("USER_COLOUR", await self._gather_user_colour(self.message.author)),
             ("NAME", str(html.escape(self.message.author.display_name))),
-            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator),
-             PARSE_MODE_NONE),
+            ("NAME_TAG", await discriminator(self.message.author.name, self.message.author.discriminator), PARSE_MODE_NONE),
             ("MESSAGE_ID", str(self.message.id), PARSE_MODE_NONE),
         ])
 
@@ -463,19 +464,20 @@ class MessageConstruct:
 
         local_time = time.astimezone(timezone(self.pytz_timezone))
         day_name = "月火水木金土日"
-        wd = day_name[local_time.weekday()]
-        dt1 = local_time.strftime("%Y/%m/%d")
-        dt2 = local_time.strftime("%H:%M")
-        return f"{dt1} ({wd}) {dt2}"
+        weekday = day_name[local_time.weekday()]
+        date = local_time.strftime("%Y/%m/%d")
+        time = local_time.strftime("%H:%M")
+
         # return local_time.strftime(self.time_format)
+        return f"{date} ({weekday}) {time}"
 
 
 async def gather_messages(
-        messages: List[discord.Message],
-        guild: discord.Guild,
-        pytz_timezone,
-        military_time,
-        attachment_handler: Optional[AttachmentHandler],
+    messages: List[discord.Message],
+    guild: discord.Guild,
+    pytz_timezone,
+    military_time,
+    attachment_handler: Optional[AttachmentHandler],
 ) -> (str, dict):
     message_html: str = ""
     meta_data: dict = {}
@@ -503,7 +505,7 @@ async def gather_messages(
             meta_data,
             message_dict,
             attachment_handler,
-        ).construct_message()
+            ).construct_message()
 
         message_html += content_html
         previous_message = message

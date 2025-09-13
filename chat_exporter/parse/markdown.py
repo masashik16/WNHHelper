@@ -1,6 +1,5 @@
 import html
 import re
-
 from chat_exporter.ext.emoji_convert import convert_emoji
 
 
@@ -8,6 +7,7 @@ class ParseMarkdown:
     def __init__(self, content):
         self.content = content
         self.code_blocks_content = []
+
 
     async def standard_message_flow(self):
         self.parse_code_block_markdown()
@@ -220,8 +220,7 @@ class ParseMarkdown:
             if not reference:
                 self.content = self.content.replace(
                     self.content[match.start():match.end()],
-                    '<div class="pre pre--multiline %s">%s</div>' % (language_class,
-                                                                     f'%s{len(self.code_blocks_content)}')
+                    '<div class="pre pre--multiline %s">%s</div>' % (language_class, f'%s{len(self.code_blocks_content)}')
                 )
             else:
                 self.content = self.content.replace(
