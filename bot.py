@@ -18,6 +18,7 @@ TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 # 接続に必要なオブジェクトを生成
 MY_GUILD = discord.Object(id=GUILD_ID)
+DISALLOW_MENTION = discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False)
 
 # 読み込むCogの名前を格納
 INITIAL_EXTENSIONS = [

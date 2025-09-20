@@ -8,6 +8,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import db
+from bot import DISALLOW_MENTION
 from exception import discord_error
 from logs import logger
 
@@ -33,7 +34,7 @@ class Division(commands.Cog):
         """分隊募集ボタンを作成"""
         # ビューを含むメッセージを送信
         channel = interaction.channel
-        await channel.send(view=DivisionView())
+        await channel.send(view=DivisionView(),allowed_mentions=DISALLOW_MENTION)
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa

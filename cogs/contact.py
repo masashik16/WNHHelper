@@ -9,7 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import chat_exporter
-from bot import check_developer
+from bot import check_developer, DISALLOW_MENTION
 from db import get_inquiry_number
 from exception import discord_error
 from logs import logger
@@ -45,7 +45,7 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("contact")
-COOLDOWN = commands.CooldownMapping.from_cooldown(1, 5, commands.BucketType.member)
+COOLDOWN = commands.CooldownMapping.from_cooldown(1, 5, commands.BucketType.member)  # noqa
 DICT_CATEGORY = {GENERAL_INQUIRY_OPEN: "INQUIRY",
                  GENERAL_INQUIRY_CLOSE: "INQUIRY", REPORT_OPEN: "REPORT",
                  REPORT_CLOSE: "REPORT", CLAN_OPEN: "CLAN", CLAN_CLOSE: "CLAN"}
@@ -70,7 +70,8 @@ class Contact(commands.Cog):
     async def create_message(self, interaction: discord.Interaction):
         """認証用メッセージを作成"""
         channel = interaction.channel
-        await channel.send(view=CreateTicketView())
+
+        await channel.send(view=CreateTicketView(), allowed_mentions=DISALLOW_MENTION)
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
