@@ -23,10 +23,10 @@ ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 ROLE_ID_CLAN_RECRUITER = int(os.environ.get("ROLE_ID_CLAN_RECRUITER"))
 # ご意見・ご要望・その他問い合わせ
 OPINION_LOG = int(os.environ.get("OPINION_LOG"))
-GENERAL_INQRY_OPEN = int(os.environ.get("GENERAL_INQRY_OPEN"))
-GENERAL_INQRY_CLOSE = int(os.environ.get("GENERAL_INQRY_CLOSE"))
-GENERAL_INQRY_LOG = int(os.environ.get("GENERAL_INQRY_LOG"))
-GENERAL_INQRY_SAVE = int(os.environ.get("GENERAL_INQRY_SAVE"))
+GENERAL_INQUIRY_OPEN = int(os.environ.get("GENERAL_INQUIRY_OPEN"))
+GENERAL_INQUIRY_CLOSE = int(os.environ.get("GENERAL_INQUIRY_CLOSE"))
+GENERAL_INQUIRY_LOG = int(os.environ.get("GENERAL_INQUIRY_LOG"))
+GENERAL_INQUIRY_SAVE = int(os.environ.get("GENERAL_INQUIRY_SAVE"))
 # 通報
 REPORT_OPEN = int(os.environ.get("REPORT_OPEN"))
 REPORT_CLOSE = int(os.environ.get("REPORT_CLOSE"))
@@ -46,18 +46,18 @@ Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("contact")
 COOLDOWN = commands.CooldownMapping.from_cooldown(1, 5, commands.BucketType.member)
-DICT_CATEGORY = {GENERAL_INQRY_OPEN: "GENERAL",
-                 GENERAL_INQRY_CLOSE: "GENERAL", REPORT_OPEN: "REPORT",
+DICT_CATEGORY = {GENERAL_INQUIRY_OPEN: "INQUIRY",
+                 GENERAL_INQUIRY_CLOSE: "INQUIRY", REPORT_OPEN: "REPORT",
                  REPORT_CLOSE: "REPORT", CLAN_OPEN: "CLAN", CLAN_CLOSE: "CLAN"}
-DICT_NAME = {"GENERAL": "ご意見・ご要望・その他お問い合わせ", "REPORT": "違反行為の報告",
+DICT_NAME = {"INQUIRY": "ご意見・ご要望・その他お問い合わせ", "REPORT": "違反行為の報告",
              "CLAN": "公認クランプログラムへのお申し込み"}
-DICT_OPEN_CATEGORY = {"GENERAL": GENERAL_INQRY_OPEN, "REPORT": REPORT_OPEN,
+DICT_OPEN_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_OPEN, "REPORT": REPORT_OPEN,
                       "CLAN": CLAN_OPEN}
-DICT_CLOSE_CATEGORY = {"GENERAL": GENERAL_INQRY_CLOSE, "REPORT": REPORT_CLOSE,
+DICT_CLOSE_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_CLOSE, "REPORT": REPORT_CLOSE,
                        "CLAN": CLAN_CLOSE}
-DICT_LOG_CATEGORY = {"GENERAL": GENERAL_INQRY_LOG, "REPORT": REPORT_LOG,
+DICT_LOG_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_LOG, "REPORT": REPORT_LOG,
                      "CLAN": CLAN_LOG}
-DICT_SAVE_CATEGORY = {"GENERAL": GENERAL_INQRY_SAVE, "REPORT": REPORT_SAVE,
+DICT_SAVE_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_SAVE, "REPORT": REPORT_SAVE,
                       "CLAN": CLAN_SAVE}
 
 
@@ -150,8 +150,10 @@ class CreateTicketView(ui.LayoutView):
 
     text1 = ui.TextDisplay("## 各種問い合わせについて\n"
                            "最後の対応から24時間反応がないチケットはクローズします")
-    text2 = ui.TextDisplay("### 当サーバーに対するご意見/ご要望/その他お問い合わせ\n"
-                           "下のリストから「ご意見・ご要望・その他問い合わせ」を選択してチケットを作成してください。")
+    text2 = ui.TextDisplay("### 当サーバーに対するご意見・ご要望・その他お問い合わせ\n"
+                           "下のリストから「ご意見・ご要望」を選択して内容を送信してください。\n"
+                           "### WNH運営チームへのお問い合わせ\n"
+                           "下のリストから「WNH運営チームへの問い合わせ」を選択してチケットを作成してください。")
     text3 = ui.TextDisplay("### 公認クランプログラムへのお申し込み\n"
                            f"<@&{ROLE_ID_CLAN_RECRUITER}>ロールをご希望の方は「公認クランプログラムへのお申し込み」を選択してください。")
     text4 = ui.TextDisplay("### 違反行為の報告\n"
@@ -172,7 +174,7 @@ class CreateTicketView(ui.LayoutView):
         placeholder="お問い合わせ内容を選択してください",
         options=[
             discord.SelectOption(label="ご意見・ご要望", value="OPINION", emoji="💬"),
-            discord.SelectOption(label="その他問い合わせ", value="GENERAL", emoji="📨"),
+            discord.SelectOption(label="WNH運営チームへの問い合わせ", value="INQUIRY", emoji="📨"),
             discord.SelectOption(label="違反行為の報告", value="REPORT", emoji="🚨"),
             discord.SelectOption(label="公認クランプログラムへのお申し込み", value="CLAN", emoji="🈸"),
         ],
@@ -205,7 +207,7 @@ class CreateTicketView(ui.LayoutView):
                 channel_number_db = 1
             channel_number = f"{channel_number_db:04}"
             user = interaction.user
-            if select_value == "GENERAL":
+            if select_value == "INQUIRY":
                 view = GeneralTicketView(user)
             elif select_value == "REPORT":
                 view = ReportTicketView(user)
@@ -232,7 +234,7 @@ class CreateTicketView(ui.LayoutView):
                     interaction.user: discord.PermissionOverwrite(read_messages=True),
                     interaction.guild.get_role(ROLE_ID_WNH_STAFF): discord.PermissionOverwrite(read_messages=True)
                 }
-                channel_name_dict = {"GENERAL": "一般", "REPORT": "通報", "CLAN": "公認クラン"}
+                channel_name_dict = {"INQUIRY": "一般", "REPORT": "通報", "CLAN": "公認クラン"}
                 channel_name = channel_name_dict[select_value]
                 ticket = await open_category.create_text_channel(name=f"{channel_name}-{channel_number}",
                                                                  overwrites=overwrites)
