@@ -291,13 +291,13 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
         """フォーム送信時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
         # ギルドとチャンネルの取得
-        channel_inqury = await interaction.guild.fetch_channel(1019170633625632768)
+        channel_inquiry = await interaction.guild.fetch_channel(OPINION_LOG)
         # フォームを送信したユーザーの情報を取得
         user = interaction.user
         # 分隊募集メッセージ（Embed）の作成
-        view = OpinionView(user, self.content.component.value)
+        view = OpinionView(user, self.content.component.value)  # noqa
         # メッセージを送信し、紐づくスレッドを作成
-        message = await channel_inqury.send(view=view)
+        message = await channel_inquiry.send(view=view)
         thread = await message.create_thread(name=f"議論用")
         await thread.add_user(user)
         # フォームへのレスポンス
@@ -308,6 +308,10 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がフォーム「問い合わせ」を使用しました。")
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """エラー発生時の処理"""
+        await discord_error(self.title, interaction, error, logger)
 
 
 class ClanButton(ui.ActionRow):
