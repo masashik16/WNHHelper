@@ -192,8 +192,8 @@ class MessageConstruct:
 
         self.message.content = await fill_out(
                 self.guild, message_content, [
-                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
-                    ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
+                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_NONE),
+                    ("EDIT", "", PARSE_MODE_NONE),
                     ("SPAN_CLASS", span_class, PARSE_MODE_NONE),
                 ],
             )

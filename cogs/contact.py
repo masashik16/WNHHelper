@@ -72,6 +72,48 @@ class Contact(commands.Cog):
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
 
+
+    @app_commands.command(description="メッセージ編集用")
+    @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    @app_commands.rename(url="メッセージリンクのurl")
+    async def edit_message99(self, interaction: discord.Interaction, url: str):
+        """BOTが送信したメッセージの編集"""
+        import re
+        # URLがWNH内のメッセージリンクかどうか検証
+        pattern = rf"(?<=https://discord.com/channels/{GUILD_ID})/([0-9]*)/([0-9]*)"
+        result = re.search(pattern, url)
+        # WNH内のメッセージリンクではない場合
+        if result is None:
+            await interaction.response.send_message("このサーバーのメッセージではありません", ephemeral=True)  # noqa
+        # WNH内のメッセージリンクの場合
+        else:
+            # 値の代入とチャンネル・メッセージの取得
+            guild = self.bot.get_guild(GUILD_ID)
+            channel_id = int(result.group(1))
+            channel = await guild.fetch_channel(channel_id)
+            message_id = int(result.group(2))
+            message = await channel.fetch_message(message_id)
+            # 編集後の内容の定義
+            # メッセージを編集
+            try:
+                await message.edit(view=ToolButtonView())
+            # 送信者がこのBOTでない場合
+            except discord.Forbidden:
+                response_embed = discord.Embed(
+                    description="⚠️ 権限がありません。<@1019156547449913414>が送信したメッセージではない可能性があります。",
+                    color=Color_ERROR)
+                await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+            else:
+                # コマンドへのレスポンス
+                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=Color_OK)
+                await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+                # ログの保存
+                logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                            f"がコマンド「{interaction.command.name}」を使用し、メッセージ「{url}」を編集しました。。")
+
+
     @app_commands.command(description="チケットクローズ案内_通常")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
     @app_commands.guilds(GUILD_ID)
@@ -200,7 +242,9 @@ class CreateTicketView(ui.LayoutView):
                 # Embedを送信
                 await interaction.followup.send(f"チケット{ticket.jump_url}が作成されました。",
                                                 ephemeral=True)  # noqa
-
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
+        """エラー処理"""
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 class ClanButton(ui.ActionRow):
     def __init__(self) -> None:
@@ -223,6 +267,7 @@ class ClanButton(ui.ActionRow):
         else:
             button.disabled = True
             await interaction.response.send_modal(ClanForm(view=self))  # noqa
+
 
 
 class ClanTicketView(ui.LayoutView):
@@ -251,6 +296,9 @@ class ClanTicketView(ui.LayoutView):
         button = ClanButton()
         self.add_item(button)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
+        """エラー処理"""
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 class CloseButton(ui.ActionRow):
     def __init__(self) -> None:
@@ -276,6 +324,9 @@ class GeneralTicketView(ui.LayoutView):
         button = CloseButton()
         self.add_item(button)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
+        """エラー処理"""
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 class ReportTicketView(ui.LayoutView):
     def __init__(self, user=None) -> None:
@@ -295,6 +346,9 @@ class ReportTicketView(ui.LayoutView):
         button = CloseButton()
         self.add_item(button)
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
+        """エラー処理"""
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 async def ticket_close(interaction: discord.Interaction):
     bucket = COOLDOWN.get_bucket(interaction.message)
@@ -444,9 +498,9 @@ class ToolButtonView(ui.LayoutView):
             # チケットを保存
             category = DICT_CATEGORY[interaction.channel.category_id]
             category_name = DICT_NAME[category]
-            first_user_message_list = [message.content async for message in
+            first_user_message_list = [message async for message in
                                        interaction.channel.history(limit=1, oldest_first=True)]
-            first_user_message = first_user_message_list[0]
+            first_user_message = first_user_message_list[0].components[0].content
             user = await interaction.client.fetch_user(int(first_user_message[2:-1]))
             embed = discord.Embed(colour=Color_OK)
             embed.add_field(name="チケット所有者", value=f"{user.mention}")
@@ -494,6 +548,9 @@ class ToolButtonView(ui.LayoutView):
             time.sleep(3)
             await interaction.channel.delete()
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
+        """エラー処理"""
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     """フォームの実装"""

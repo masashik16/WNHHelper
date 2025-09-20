@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from bot import check_developer
 from exception import discord_error
 from logs import logger
+import chat_exporter
+import io
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -140,13 +142,9 @@ class Commands2(commands.Cog):
             channel = await guild.fetch_channel(channel_id)
             message_id = int(result.group(2))
             message = await channel.fetch_message(message_id)
-            # 編集後の内容の定義
-            ch = guild.get_channel(1019170633625632768)
-            msg = await message.forward(ch)
-
             # メッセージを編集
             try:
-                await msg.edit(content="A")
+                await message.edit()
             # 送信者がこのBOTでない場合
             except discord.Forbidden:
                 response_embed = discord.Embed(
@@ -160,6 +158,28 @@ class Commands2(commands.Cog):
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、メッセージ「{url}」を編集しました。。")
+
+    @app_commands.command(description="テスト")
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def test2(self, interaction: discord.Interaction):
+        transcript = await chat_exporter.export(
+            interaction.channel,
+            tz_info="Asia/Tokyo",
+            military_time=True
+        )
+
+        if transcript is None:
+            return
+
+        transcript_file = discord.File(
+            io.BytesIO(transcript.encode()),
+            filename=f"transcript-{interaction.channel.name}.html",
+        )
+        #
+        # Embedを作成
+        response_embed = discord.Embed(description="TEST OK")
+        await interaction.response.send_message(embed=response_embed, file=transcript_file, ephemeral=True)  # noqa
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
