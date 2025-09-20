@@ -136,9 +136,9 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         description="初心者の定義：ランダム戦の戦闘数が3000戦以下の方",
         component=discord.ui.Select(
             options=[
-                discord.SelectOption(label="はい", value="はい"),
-                discord.SelectOption(label="いいえ", value="いいえ"),
-                discord.SelectOption(label="無回答", value="無回答"),
+                discord.SelectOption(label="はい"),
+                discord.SelectOption(label="いいえ"),
+                discord.SelectOption(label="無回答"),
             ],
         ),
     )

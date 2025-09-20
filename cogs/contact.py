@@ -9,6 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import chat_exporter
+from bot import check_developer
 from db import get_inquiry_number
 from exception import discord_error
 from logs import logger
@@ -20,20 +21,25 @@ ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 ROLE_ID_CLAN_RECRUITER = int(os.environ.get("ROLE_ID_CLAN_RECRUITER"))
+# ご意見・ご要望・その他問い合わせ
+OPINION_LOG = int(os.environ.get("OPINION_LOG"))
 GENERAL_INQRY_OPEN = int(os.environ.get("GENERAL_INQRY_OPEN"))
 GENERAL_INQRY_CLOSE = int(os.environ.get("GENERAL_INQRY_CLOSE"))
 GENERAL_INQRY_LOG = int(os.environ.get("GENERAL_INQRY_LOG"))
 GENERAL_INQRY_SAVE = int(os.environ.get("GENERAL_INQRY_SAVE"))
+# 通報
 REPORT_OPEN = int(os.environ.get("REPORT_OPEN"))
 REPORT_CLOSE = int(os.environ.get("REPORT_CLOSE"))
 REPORT_LOG = int(os.environ.get("REPORT_LOG"))
 REPORT_SAVE = int(os.environ.get("REPORT_SAVE"))
+# 公認クラン
 CLAN_OPEN = int(os.environ.get("CLAN_OPEN"))
 CLAN_CLOSE = int(os.environ.get("CLAN_CLOSE"))
 CLAN_LOG = int(os.environ.get("CLAN_LOG"))
 CLAN_SAVE = int(os.environ.get("CLAN_SAVE"))
 CLAN_STAFF_ROLE = int(os.environ.get("CLAN_STAFF_ROLE"))
 CLAN_MEET_ID = int(os.environ.get("CLAN_MEET_ID"))
+
 ENV = os.environ.get("ENV")
 Color_OK = 0x00ff00
 Color_WARN = 0xffa500
@@ -72,9 +78,8 @@ class Contact(commands.Cog):
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
 
-
     @app_commands.command(description="メッセージ編集用")
-    @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
+    @app_commands.check(check_developer)
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     @app_commands.rename(url="メッセージリンクのurl")
@@ -112,7 +117,6 @@ class Contact(commands.Cog):
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、メッセージ「{url}」を編集しました。。")
-
 
     @app_commands.command(description="チケットクローズ案内_通常")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
@@ -167,13 +171,15 @@ class CreateTicketView(ui.LayoutView):
         custom_id="ticket_panel",
         placeholder="お問い合わせ内容を選択してください",
         options=[
-            discord.SelectOption(label="ご意見・ご要望・その他お問い合わせ", value="GENERAL", emoji="📨"),
+            discord.SelectOption(label="ご意見・ご要望", value="OPINION", emoji="💬"),
+            discord.SelectOption(label="その他問い合わせ", value="GENERAL", emoji="📨"),
             discord.SelectOption(label="違反行為の報告", value="REPORT", emoji="🚨"),
             discord.SelectOption(label="公認クランプログラムへのお申し込み", value="CLAN", emoji="🈸"),
         ],
     )
     async def set_channel(self, interaction: discord.Interaction, select: ui.Select):
         bucket = COOLDOWN.get_bucket(interaction.message)
+        select_value = select.values[0]
         if ENV == "prod":
             retry_after = bucket.update_rate_limit()
         else:
@@ -182,9 +188,10 @@ class CreateTicketView(ui.LayoutView):
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
                                         color=Color_ERROR)
             await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+        elif select_value == "OPINION":
+            await interaction.response.send_modal(InquiryForm())  # noqa
         else:
             await interaction.response.defer()  # noqa
-            select_value = select.values[0]
             # ドロップダウンの選択項目を初期化
             await interaction.message.edit(view=CreateTicketView())
             # 選択されたカテゴリのカテゴリチャンネルの取得
@@ -242,9 +249,65 @@ class CreateTicketView(ui.LayoutView):
                 # Embedを送信
                 await interaction.followup.send(f"チケット{ticket.jump_url}が作成されました。",
                                                 ephemeral=True)  # noqa
+
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
         await discord_error(item.label, interaction, error, logger)  # noqa
+
+
+class OpinionView(ui.LayoutView):
+    def __init__(self, user, content) -> None:
+        super().__init__(timeout=None)
+
+        opinion_text = ui.TextDisplay(content)
+        opinion_info = ui.TextDisplay(f"## ご意見・ご要望\n"
+                                      f"送信者：{user.mention}\n"
+                                      f"以下内容")
+        separator = ui.Separator()
+        container = ui.Container(opinion_info, separator, opinion_text)
+        self.add_item(container)
+
+
+class InquiryForm(ui.Modal, title="ご意見・ご要望"):
+    """フォームの実装"""
+
+    def __init__(self):
+        """ギルド、ロール、チャンネルの事前定義"""
+        super().__init__()
+
+    # フォームの入力項目の定義（最大5個）
+
+    content = ui.Label(
+        text="内容",
+        description="WNH運営チームへのご意見・ご要望をご記入ください。",
+        component=ui.TextInput(
+            style=discord.TextStyle.long,  # noqa
+            max_length=3900
+        ),
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """フォーム送信時の処理"""
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # ギルドとチャンネルの取得
+        channel_inqury = await interaction.guild.fetch_channel(1019170633625632768)
+        # フォームを送信したユーザーの情報を取得
+        user = interaction.user
+        # 分隊募集メッセージ（Embed）の作成
+        view = OpinionView(user, self.content.component.value)
+        # メッセージを送信し、紐づくスレッドを作成
+        message = await channel_inqury.send(view=view)
+        thread = await message.create_thread(name=f"議論用")
+        await thread.add_user(user)
+        # フォームへのレスポンス
+        response_embed = discord.Embed(description=f"ℹ️ ご意見・ご要望を受け付けました。",
+                                       color=Color_OK)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
+        # DBに保存
+        # ログの保存
+        logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                    f"がフォーム「問い合わせ」を使用しました。")
+
 
 class ClanButton(ui.ActionRow):
     def __init__(self) -> None:
@@ -267,7 +330,6 @@ class ClanButton(ui.ActionRow):
         else:
             button.disabled = True
             await interaction.response.send_modal(ClanForm(view=self))  # noqa
-
 
 
 class ClanTicketView(ui.LayoutView):
@@ -300,6 +362,7 @@ class ClanTicketView(ui.LayoutView):
         """エラー処理"""
         await discord_error(item.label, interaction, error, logger)  # noqa
 
+
 class CloseButton(ui.ActionRow):
     def __init__(self) -> None:
         super().__init__()
@@ -328,6 +391,7 @@ class GeneralTicketView(ui.LayoutView):
         """エラー処理"""
         await discord_error(item.label, interaction, error, logger)  # noqa
 
+
 class ReportTicketView(ui.LayoutView):
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
@@ -349,6 +413,7 @@ class ReportTicketView(ui.LayoutView):
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
         await discord_error(item.label, interaction, error, logger)  # noqa
+
 
 async def ticket_close(interaction: discord.Interaction):
     bucket = COOLDOWN.get_bucket(interaction.message)
@@ -552,6 +617,7 @@ class ToolButtonView(ui.LayoutView):
         """エラー処理"""
         await discord_error(item.label, interaction, error, logger)  # noqa
 
+
 class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     """フォームの実装"""
 
@@ -625,6 +691,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
         await discord_error(self.title, interaction, error, logger)
+
 
 async def setup(bot):
     """起動時のコグへの追加"""

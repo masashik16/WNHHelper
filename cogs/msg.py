@@ -85,9 +85,6 @@ class Message(commands.Cog):
         elif message == "no_role":
             rule = self.bot.get_cog("Rule")
             await rule.create_message2(interaction)  # noqa
-        # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
-        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}:{message}」を使用しました。")
