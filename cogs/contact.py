@@ -150,7 +150,7 @@ class CreateTicketView(ui.LayoutView):
 
     text1 = ui.TextDisplay("## 各種問い合わせについて\n"
                            "最後の対応から24時間反応がないチケットはクローズします")
-    text2 = ui.TextDisplay("### 当サーバーに対するご意見・ご要望\n"
+    text2 = ui.TextDisplay("### WNHに関するご意見・ご要望\n"
                            "下のリストから「ご意見・ご要望」を選択して内容を送信してください。\n"
                            "### WNH運営チームへのお問い合わせ\n"
                            "下のリストから「WNH運営チームへの問い合わせ」を選択してチケットを作成してください。")
