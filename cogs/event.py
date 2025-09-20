@@ -2,11 +2,12 @@ import os
 import time
 
 import discord
-from discord import ui
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -98,13 +99,7 @@ class Event(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 class Event1Button(ui.View):
@@ -173,13 +168,7 @@ class Event1Button(ui.View):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{item}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 
 class Event1Form(ui.Modal, title="イベント申込フォーム"):
@@ -231,10 +220,7 @@ class Event1Form(ui.Modal, title="イベント申込フォーム"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「イベント1」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 class Event2Button(ui.View):
@@ -303,13 +289,7 @@ class Event2Button(ui.View):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: ui.Item, /) -> None:
         """エラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{item}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(item.label, interaction, error, logger)  # noqa
 
 
 class Event2Form(ui.Modal, title="イベント申込フォーム"):
@@ -361,10 +341,7 @@ class Event2Form(ui.Modal, title="イベント申込フォーム"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「イベント2」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 async def setup(bot):

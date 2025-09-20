@@ -50,6 +50,15 @@ class ParseMarkdown:
 
         return self.content
 
+    async def message_reference_flow_forwarded(self):
+        self.strip_preserve_forwarded()
+        self.parse_code_block_markdown(reference=True)
+        self.parse_normal_markdown()
+        self.reverse_code_block_markdown()
+        self.parse_br()
+
+        return self.content
+
     async def special_emoji_flow(self):
         await self.parse_emoji()
         return self.content
@@ -78,6 +87,18 @@ class ParseMarkdown:
 
     def strip_preserve(self):
         p = r'<span class="chatlog__markdown-preserve">(.*)</span>'
+        r = '%s'
+
+        pattern = re.compile(p)
+        match = re.search(pattern, self.content)
+        while match is not None:
+            affected_text = match.group(1)
+            self.content = self.content.replace(self.content[match.start():match.end()],
+                                                r % affected_text)
+            match = re.search(pattern, self.content)
+
+    def strip_preserve_forwarded(self):
+        p = r'<span class="chatlog__markdown-preserve_forwarded">(.*)</span>'
         r = '%s'
 
         pattern = re.compile(p)

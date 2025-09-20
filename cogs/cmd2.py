@@ -7,6 +7,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 from bot import check_developer
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -140,27 +141,12 @@ class Commands2(commands.Cog):
             message_id = int(result.group(2))
             message = await channel.fetch_message(message_id)
             # 編集後の内容の定義
-            embed = discord.Embed(title="各種問い合わせについて",
-                                  description=f"最後の対応から24時間反応がないチケットはクローズします")
-            embed.add_field(name="当サーバーに対するご意見/ご要望/その他お問い合わせ",
-                            value="下記リストから「ご意見・ご要望・その他問い合わせ」」を選択してチケットを作成してください。",
-                            inline=False)
-            embed.add_field(name="公認クランプログラムへのお申し込み",
-                            value="<@&983915259838488587>ロールをご希望の方は「」を選択してください。",
-                            inline=False)
-            embed.add_field(name="違反行為の報告",
-                            value="*　不適切なメッセージを報告したい場合"
-                                  "\n報告したいメッセージを右クリックして「アプリ」→「メッセージの報告」をクリックし、報告内容を記載して送信してください"
-                                  "\n\n* 不適切なニックネームやアバター・VCでの違反行為等メッセージでの違反以外を報告したい場合"
-                                  "\nユーザーを右クリックして「アプリ」→「ユーザーの報告」をクリックし、報告内容を記載して送信してください"
-                                  "\n\n上記の手順でエラーが起こる場合は、下記リストから「違反行為の報告」を選択してチケットを作成してください。",
-                            inline=False)
-            embed.add_field(name="セクシャルハラスメント等の通報について",
-                            value="セクシャルハラスメント等の通報で女性スタッフによる対応を希望する場合は<@767646985632481320>>のDMへご連絡ください。",
-                            inline=False)
+            ch = guild.get_channel(1019170633625632768)
+            msg = await message.forward(ch)
+
             # メッセージを編集
             try:
-                await message.edit(embed=embed)
+                await msg.edit(content="A")
             # 送信者がこのBOTでない場合
             except discord.Forbidden:
                 response_embed = discord.Embed(
@@ -175,33 +161,9 @@ class Commands2(commands.Cog):
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、メッセージ「{url}」を編集しました。。")
 
-    @app_commands.command(description="HelperのDM削除")
-    @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
-    @app_commands.guilds(GUILD_ID)
-    @app_commands.guild_only()
-    async def delete_dm(self, interaction: discord.Interaction):
-        """DM削除"""
-        user = interaction.user
-        dm = await user.create_dm()
-        async for message in dm.history(limit=200):
-            if message.author == self.bot.user:
-                await message.delete()
-                # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 完了しました", color=Color_OK)
-        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                    f"がコマンド「{interaction.command.name}」を使用しました。")
-
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 async def send_dm_gas_5thcup(bot, discord_id, types):

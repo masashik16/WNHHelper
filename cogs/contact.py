@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 import chat_exporter
 from db import get_inquiry_number
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -94,13 +95,7 @@ class Contact(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 class CreateTicketView(ui.LayoutView):
@@ -572,11 +567,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「公認クラン」でエラーが発生しました。\nエラー内容：{error}")
-
+        await discord_error(self.title, interaction, error, logger)
 
 async def setup(bot):
     """起動時のコグへの追加"""

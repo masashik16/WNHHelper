@@ -15,6 +15,7 @@ PARSE_MODE_SPECIAL_EMBED = 4
 PARSE_MODE_REFERENCE = 5
 PARSE_MODE_EMOJI = 6
 PARSE_MODE_HTML_SAFE = 7
+PARSE_MODE_REFERENCE_FORWARDED = 8
 
 
 async def fill_out(guild, base, replacements):
@@ -35,6 +36,8 @@ async def fill_out(guild, base, replacements):
             v = await ParseMarkdown(v).special_embed_flow()
         elif mode == PARSE_MODE_REFERENCE:
             v = await ParseMarkdown(v).message_reference_flow()
+        elif mode == PARSE_MODE_REFERENCE_FORWARDED:
+            v = await ParseMarkdown(v).message_reference_flow_forwarded()
         elif mode == PARSE_MODE_EMOJI:
             v = await ParseMarkdown(v).special_emoji_flow()
         elif mode == PARSE_MODE_HTML_SAFE:
@@ -75,6 +78,13 @@ component_button = read_file(dir_path + "/html/component/component_button.html")
 component_menu = read_file(dir_path + "/html/component/component_menu.html")
 component_menu_options = read_file(dir_path + "/html/component/component_menu_options.html")
 component_menu_options_emoji = read_file(dir_path + "/html/component/component_menu_options_emoji.html")
+component_container = read_file(dir_path + "/html/component/component_container.html")
+component_media_gallery_image = read_file(dir_path + "/html/component/component_media_gallery_image.html")
+component_media_gallery_video = read_file(dir_path + "/html/component/component_media_gallery_video.html")
+component_section = read_file(dir_path + "/html/component/component_section.html")
+component_separator = read_file(dir_path + "/html/component/component_separator.html")
+component_thumbnail = read_file(dir_path + "/html/component/component_thumbnail.html")
+component_text_display = read_file(dir_path + "/html/component/component_text_display.html")
 
 # EMBED
 embed_body = read_file(dir_path + "/html/embed/body.html")

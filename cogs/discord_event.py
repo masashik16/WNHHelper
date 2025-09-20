@@ -1,7 +1,8 @@
-import datetime
+from datetime import datetime
 import os
 
 import discord
+import pytz
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -20,6 +21,7 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("discord_event")
+JP = pytz.timezone("Asia/Tokyo")
 
 """コマンドの実装"""
 
@@ -44,8 +46,8 @@ class DiscordEvent(commands.Cog):
     async def on_member_update(self, old_member: discord.Member, new_member: discord.Member):
         guild = self.bot.get_guild(GUILD_ID)
         user_log_channel = await guild.fetch_channel(CHANNEL_ID_USER_LOG)
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-        ts = int(datetime.datetime.timestamp(dt))
+        dt = datetime.now(JP)
+        ts = int(datetime.timestamp(dt))
         if old_member.nick != new_member.nick:
             embed = discord.Embed(title="", description=f"<@{old_member.id}>のニックネームが更新されました")
             embed.add_field(name="更新後", value=f"{new_member.nick}", inline=False)
@@ -74,8 +76,8 @@ class DiscordEvent(commands.Cog):
     async def on_user_update(self, old_user: discord.User, new_user: discord.User):
         guild = self.bot.get_guild(GUILD_ID)
         user_log_channel = await guild.fetch_channel(CHANNEL_ID_USER_LOG)
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-        ts = int(datetime.datetime.timestamp(dt))
+        dt = datetime.now(JP)
+        ts = int(datetime.timestamp(dt))
         if old_user.name != new_user.name:
             embed = discord.Embed(title="", description=f"<@{old_user.id}>のユーザー名が更新されました")
             embed.add_field(name="更新後", value=f"{new_user.name}", inline=False)
@@ -108,8 +110,8 @@ class DiscordEvent(commands.Cog):
             message_log_channel = await guild.fetch_channel(CHANNEL_ID_MESSAGE_LOG)
             channel = message.channel
             url = f"https://discord.com/channels/{GUILD_ID}/{channel.id}"
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-            ts = int(datetime.datetime.timestamp(dt))
+            dt = datetime.now(JP)
+            ts = int(datetime.timestamp(dt))
             user = message.author
             avatar = user.display_avatar.url
             embed = discord.Embed(title="", description=f"{url}でメッセージが削除されました")
@@ -141,8 +143,8 @@ class DiscordEvent(commands.Cog):
             message_log_channel = await guild.fetch_channel(CHANNEL_ID_MESSAGE_LOG)
             channel = old_message.channel
             url = f"https://discord.com/channels/{GUILD_ID}/{channel.id}"
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-            ts = int(datetime.datetime.timestamp(dt))
+            dt = datetime.now(JP)
+            ts = int(datetime.timestamp(dt))
             user = old_message.author
             avatar = user.display_avatar.url
             embed = discord.Embed(title="", description=f"{url}でメッセージが更新されました")

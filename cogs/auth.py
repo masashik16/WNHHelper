@@ -10,6 +10,7 @@ import api
 import db
 from logs import logger
 from server import wg_auth_link
+from exception import discord_error
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(env_path, override=True)
@@ -190,13 +191,7 @@ class Auth(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 class AuthMessageView(ui.LayoutView):

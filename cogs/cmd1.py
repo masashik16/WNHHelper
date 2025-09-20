@@ -1,4 +1,4 @@
-import datetime
+from datetime import date, datetime, time
 import importlib
 import os
 import statistics
@@ -15,6 +15,7 @@ import db
 import server
 from api import wows_user_clan
 from bot import check_developer
+from exception import discord_error
 from logs import logger
 from views import wg_auth
 
@@ -126,7 +127,7 @@ class Commands1(commands.Cog):
         date_str = year_date + " " + input_time + " " + "+0900"
         # 入力値をdatatimeで変換
         try:
-            date_dt = datetime.datetime.strptime(date_str, "%Y/%m/%d %H:%M %z")
+            date_dt = datetime.strptime(date_str, "%Y/%m/%d %H:%M %z")
         # 入力形式が誤っている場合
         except ValueError:
             embed = discord.Embed(description="⚠️ 入力が誤っています。次の内容を確認してください。\n", color=Color_ERROR)
@@ -201,9 +202,9 @@ class Commands1(commands.Cog):
         # DBへ受付状況の登録
         guild = self.bot.get_guild(GUILD_ID)
         # 1ヶ月前のタイムスタンプの取得
-        d = datetime.date.today() - relativedelta(months=1)
-        t = datetime.time()
-        one_month_ago = datetime.datetime.combine(d, t)
+        d = date.today() - relativedelta(months=1)
+        t = time()
+        one_month_ago = datetime.combine(d, t)
         one_month_ago_ts = one_month_ago.timestamp()
         # DBから取得
         if mode == "div":
@@ -253,13 +254,7 @@ class Commands1(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 async def setup(bot):

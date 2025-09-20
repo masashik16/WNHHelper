@@ -8,6 +8,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import db
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -42,13 +43,7 @@ class Division(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 """ボタンの実装"""
@@ -168,12 +163,12 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         avatar = user.display_avatar.url
         # 分隊募集メッセージ（Embed）の作成
         embed = discord.Embed(title=f"分隊募集中！", color=0x0000ff)
-        embed.add_field(name="1.日時", value=self.dtime.component.value, inline=False)
-        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.component.value, inline=False)
-        embed.add_field(name="3. 募集人数", value=self.member_count.component.value, inline=False)
-        embed.add_field(name="4. 初心者ですか？", value=self.newbie.component.values[0], inline=False)
-        if not self.other.component.value == "":
-            embed.add_field(name="5. その他注記事項", value=self.other.component.value, inline=False)
+        embed.add_field(name="1.日時", value=self.dtime.component.value, inline=False)  # noqa
+        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.component.value, inline=False)  # noqa
+        embed.add_field(name="3. 募集人数", value=self.member_count.component.value, inline=False)  # noqa
+        embed.add_field(name="4. 初心者ですか？", value=self.newbie.component.values[0], inline=False)  # noqa
+        if not self.other.component.value == "":  # noqa
+            embed.add_field(name="5. その他注記事項", value=self.other.component.value, inline=False)  # noqa
         else:
             embed.add_field(name="5. その他注記事項", value="入力なし", inline=False)
         embed.set_author(name=f"{server_name}", icon_url=f"{avatar}")
@@ -194,10 +189,7 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「分隊募集」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 async def setup(bot):

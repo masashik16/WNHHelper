@@ -1,14 +1,16 @@
-import datetime
 import os
 import re
+from datetime import datetime, timedelta
 
 import discord
-from discord import ui
+import pytz
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
 import db
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -17,6 +19,7 @@ GUILD_ID = int(os.environ.get("GUILD_ID"))
 ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_SENIOR_MOD = int(os.environ.get("ROLE_ID_SENIOR_MOD"))
+ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 CHANNEL_ID_MOD_CASE = int(os.environ.get("CHANNEL_ID_MOD_CASE"))
 CHANNEL_ID_RULE = int(os.environ.get("CHANNEL_ID_RULE"))
@@ -26,6 +29,7 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("mod")
+JP = pytz.timezone("Asia/Tokyo")
 
 # モデレーション種類の辞書の定義
 MODERATION_TYPE = {1: "厳重注意", 2: "警告", 3: "発言禁止", 4: "BAN", 5: "処罰変更（内容変更）", 6: "処罰変更（取消）"}
@@ -41,14 +45,29 @@ class Moderation(commands.Cog):
             name="メッセージを報告",
             callback=self.report_message,
         )
+        self.bot.tree.add_command(self.report_message_menu)
+        self.report_message_menu.error(self.cog_app_command_error)
+
         self.report_user_menu = app_commands.ContextMenu(
             name="ユーザーを報告",
             callback=self.report_user,
         )
-        self.bot.tree.add_command(self.report_message_menu)
         self.bot.tree.add_command(self.report_user_menu)
-        self.report_message_menu.error(self.cog_app_command_error)
         self.report_user_menu.error(self.cog_app_command_error)
+
+        self.delete_message_menu = app_commands.ContextMenu(
+            name="メッセージを削除（管理者用）",
+            callback=self.delete_message,
+        )
+        self.bot.tree.add_command(self.delete_message_menu)
+        self.delete_message_menu.error(self.cog_app_command_error)
+
+        self.warn_profile_menu = app_commands.ContextMenu(
+            name="不適切なプロフィールの変更指示（管理者用）",
+            callback=self.warn_profile,
+        )
+        self.bot.tree.add_command(self.warn_profile_menu)
+        self.warn_profile_menu.error(self.cog_app_command_error)
 
     @app_commands.command(description="MODログ（単一）の取得")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
@@ -226,7 +245,7 @@ class Moderation(commands.Cog):
         # 違反ユーザー情報を取得
         await interaction.response.defer(ephemeral=True)  # noqa
         # コマンド実行日時の取得
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        dt = datetime.now(JP)
         action_datetime = dt.strftime("%Y/%m/%d %H:%M")
         # 証拠画像を添付できる形式へ変換
         attachment = [evidence1, evidence2, evidence3, evidence4]
@@ -283,7 +302,7 @@ class Moderation(commands.Cog):
         # ログCHへケース情報を送信
         await channel_mod_log.send(embed=log_embed)
         # DBへケースIDと記録スレッドIDを保存
-        # await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
         # 証拠画像を添付できる形式へ変換
         for e in log.message.attachments:  # noqa
             try:
@@ -378,7 +397,7 @@ class Moderation(commands.Cog):
             else:
                 new_point = old_point[0] + point
             # コマンド実行日時の取得
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+            dt = datetime.now(JP)
             action_datetime = dt.strftime("%Y/%m/%d %H:%M")
             # 証拠画像を添付できる形式へ変換
             attachment = [evidence1, evidence2, evidence3, evidence4]
@@ -503,7 +522,7 @@ class Moderation(commands.Cog):
         member = guild.get_member(user.id)
         if member is not None:
             # 実行日時を記録
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+            dt = datetime.now(JP)
             action_datetime = dt.strftime("%Y/%m/%d %H:%M")
             # DBへケース情報を保存
             case_id = await db.save_modlog(moderate_type=3, user_id=user.id, moderator_id=self.bot.user.id,
@@ -554,7 +573,7 @@ class Moderation(commands.Cog):
                 await thread.send(user.mention)
                 await thread.send(embed=dm_embed)
             # 発言禁止処理
-            await member.timeout(datetime.timedelta(days=length), reason=f"ケース{case_id}")
+            await member.timeout(timedelta(days=length), reason=f"ケース{case_id}")
             # コマンドへのレスポンス
             response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=Color_OK)
             await interaction.followup.send(embed=response_embed)
@@ -577,7 +596,7 @@ class Moderation(commands.Cog):
         channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
         channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
         # 実行日時を記録
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        dt = datetime.now(JP)
         action_datetime = dt.strftime("%Y/%m/%d %H:%M")
         # DBへケース情報を保存
         case_id = await db.save_modlog(moderate_type=4, user_id=user.id, moderator_id=self.bot.user.id, length="",
@@ -694,7 +713,7 @@ class Moderation(commands.Cog):
             user = await self.bot.fetch_user(int(user_id))
             await interaction.response.defer(ephemeral=True)  # noqa
             # コマンド実行日時の取得
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+            dt = datetime.now(JP)
             action_datetime = dt.strftime("%Y/%m/%d %H:%M")
             # DBへケース情報を保存
             if change_type == 1:
@@ -720,7 +739,8 @@ class Moderation(commands.Cog):
             messages = [message async for message in thread.history(oldest_first=True)]
             content = messages[0].content
             if change_type == 1:
-                await messages[0].edit(content=f"{content}\n\n処罰内容変更済\n変更処理ケース番号：{log.thread.jump_url}")  # noqa
+                await messages[0].edit(
+                    content=f"{content}\n\n処罰内容変更済\n変更処理ケース番号：{log.thread.jump_url}")  # noqa
             else:
                 await messages[0].edit(content=f"{content}\n\n処罰取消済")
             # ログCHへ送信するケース情報（Embed）を作成
@@ -810,7 +830,7 @@ class Moderation(commands.Cog):
                     embed.add_field(name="処罰内容の変更の反映について",
                                     value="反映までに数日かかる場合がございます。\n予めご了承ください。")
                 view = SendAppealView(user, case_id, embed)
-                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？",  # noqa
+                await interaction.response.send_message(content=f"下記内容で<@{user.id}>に送信します。よろしいですか？",
                                                         # noqa
                                                         embed=embed, view=view, ephemeral=True)
         else:
@@ -838,7 +858,7 @@ class Moderation(commands.Cog):
         # 違反ユーザー情報を取得
         await interaction.response.defer(ephemeral=True)  # noqa
         # コマンド実行日時の取得
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        dt = datetime.now(JP)
         action_datetime = dt.strftime("%Y/%m/%d %H:%M")
         # 警告メッセージの作成
         dm_embed = discord.Embed(title="厳重注意",
@@ -858,6 +878,42 @@ class Moderation(commands.Cog):
         # コマンドへのレスポンス
         await interaction.followup.send(content="ℹ️ 厳重注意（デモ）を発行しました", embed=dm_embed)
 
+    @app_commands.checks.has_role(ROLE_ID_SENIOR_MOD)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def delete_message(self, interaction: discord.Interaction, message: discord.Message):
+        """コンテキストメニューからのメッセージの報告"""
+        # 報告用フォームを表示
+        guild = message.guild
+        channel = message.channel
+        user = message.author
+        options = []
+        async for additional_message in channel.history(after=message):
+            if additional_message.author != user:
+                continue
+            created_time = additional_message.created_at.astimezone(JP).strftime("%Y/%m/%d %H:%M")
+            if additional_message.content == "":
+                content = "本文無し"
+            else:
+                content = additional_message.content[:100]
+            option = discord.SelectOption(label=f"{created_time}", description=f"{content}",
+                                          value=f"{additional_message.id}")
+            options.append(option)
+            if len(options) == 25:
+                break
+        if len(options) == 0:
+            await interaction.response.send_modal(DeleteMessageForm(message=message, options=None))  # noqa
+        else:
+            await interaction.response.send_modal(DeleteMessageForm(message=message, options=options))  # noqa
+
+    @app_commands.checks.has_role(ROLE_ID_SENIOR_MOD)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def warn_profile(self, interaction: discord.Interaction, member: discord.Member):
+        """コンテキストメニューからのメッセージの報告"""
+        # 報告用フォームを表示
+        await interaction.response.send_modal(WarnUserProfileForm(member=member))  # noqa
+
     @app_commands.checks.has_role(ROLE_ID_AUTHED)
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
@@ -869,20 +925,14 @@ class Moderation(commands.Cog):
     @app_commands.checks.has_role(ROLE_ID_AUTHED)
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
-    async def report_user(self, interaction: discord.Interaction, user: discord.User):
+    async def report_user(self, interaction: discord.Interaction, member: discord.Member):
         """コンテキストメニューからのユーザーの報告"""
         # 報告用フォームを表示
-        await interaction.response.send_modal(UserReportForm(user=user))  # noqa
+        await interaction.response.send_modal(UserReportForm(member=member))  # noqa
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 class SendAppealView(ui.View):
@@ -911,6 +961,277 @@ class SendAppealView(ui.View):
         await interaction.response.edit_message(content=None, embed=response_embed, view=None)  # noqa
 
 
+class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
+    """メッセージ報告フォームの実装"""
+
+    def __init__(self, message, options):
+        super().__init__()
+        self.message = message
+        if options is not None:
+            message_select = discord.ui.Label(
+                text="追加で削除するメッセージ",
+                component=discord.ui.Select(
+                    options=options,
+                    min_values=0,
+                    max_values=len(options),
+                    required=False,
+                ),
+            )
+            self.message_select = message_select
+            self.add_item(message_select)
+        else:
+            self.message_select = None
+
+    # フォームの入力項目の定義（最大5個）
+    rule_select = discord.ui.Label(
+        text="違反内容",
+        component=discord.ui.Select(
+            options=[
+                discord.SelectOption(label="無許可の宣伝行為"),
+                discord.SelectOption(label="外部リンクの投稿"),
+                discord.SelectOption(label="外部戦績サイト等のコンテンツの投稿"),
+                discord.SelectOption(label="処罰に関する議論"),
+                discord.SelectOption(label="他人に対する攻撃"),
+                discord.SelectOption(label="不適切な表現"),
+                discord.SelectOption(label="スパム行為"),
+                discord.SelectOption(label="オフトピック投稿"),
+                discord.SelectOption(label="Modに関する投稿"),
+                discord.SelectOption(label="初心者が入りにくい話題の高頻度投稿"),
+                discord.SelectOption(label="メインアカウント以外での本人確認"),
+                discord.SelectOption(label="晒し行為（IGNがマスク処理されていないSSの投稿を含む）"),
+                discord.SelectOption(label="DMによる迷惑行為"),
+                discord.SelectOption(label="政治・宗教に関する投稿"),
+                discord.SelectOption(label="違法行為並びに同行為に関する投稿"),
+                discord.SelectOption(label="各種サービス規約違反行為及び同行為に関する投稿"),
+                discord.SelectOption(label="サーバーの設定ミスを悪用する行為"),
+                discord.SelectOption(label="処罰を回避する行為"),
+                discord.SelectOption(label="円滑な運営を妨げる行為"),
+                discord.SelectOption(label="チャンネル規則への違反"),
+                discord.SelectOption(label="センシティブなコンテンツの投稿"),
+                discord.SelectOption(label="リーク等不明確な情報の投稿"),
+                discord.SelectOption(label="違反投稿に対する返信"),
+                discord.SelectOption(label="その他管理者が不適切と判断した行為"),
+            ],
+            min_values=1,
+            max_values=24,
+        ),
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """フォーム送信時の処理"""
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # ギルドとチャンネルの取得
+        guild = interaction.guild
+        channel = interaction.channel
+        channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
+        channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
+        user = self.message.author
+        messages = [self.message]
+        if self.message_select and self.message_select.component.values != "":  # noqa
+            for message_id in self.message_select.component.values:  # noqa
+                message = await channel.fetch_message(int(message_id))
+                messages.append(message)
+        # コマンド実行日時の取得
+        dt = datetime.now(JP)
+        action_datetime = dt.strftime("%Y/%m/%d %H:%M")
+        # 警告メッセージの作成
+        reason_str = ""
+        for reason in self.rule_select.component.values:  # noqa
+            if reason_str == "":
+                reason_str = reason
+            else:
+                reason_str = reason_str + f"、{reason}"
+
+        # DBへケース情報を保存
+        case_id = 9999
+        # case_id = await db.save_modlog(moderate_type=11, user_id=user.id, moderator_id=interaction.user.id, length="",
+        #                                reason=reason_str, datetime=action_datetime, point=0)
+        dm_embed = discord.Embed(title="メッセージ削除のお知らせ",
+                                 description="WNH運営チームです。\nあなたが投稿した次のメッセージは以下の理由により削除されました。"
+                                 )
+        dm_embed.add_field(name="ケース番号",
+                           value=f"{case_id}", inline=False)
+        dm_embed.add_field(name="削除理由",
+                           value=f"{reason_str}", inline=False)
+        dm_embed.add_field(name="メッセージが送信されていたチャンネル",
+                           value=f"<#{interaction.channel.id}>", inline=False)
+        dm_embed.add_field(name="削除されたメッセージ",
+                           value=f"削除されたメッセージの内容はこのメッセージの下に添付されます。", inline=False)
+        dm_embed.add_field(name="この対応に対する質問・ご意見",
+                           value=f"この対応に対する質問・ご意見は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c",
+                           inline=False)
+        log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
+                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}\n>"  # noqa
+                                                           f"アクション種類：メッセージの削除\n削除理由：{reason_str}\n"
+                                                           f"チャンネル：<#{interaction.channel.id}>")  # noqa
+        for message in messages:
+            create_time = message.created_at.astimezone(JP)
+            create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
+            await log.thread.send(f"------------------------------\nメッセージID：{message.id}\n"  # noqa
+                                  f"削除されたメッセージの送信日時：{create_time_str}")
+            await message.forward(log.thread)  # noqa
+        # ログCHへ送信するケース情報（Embed）を作成
+        log_embed = discord.Embed(title=f"ケース{case_id} | メッセージの削除 | {user.name}")
+        log_embed.add_field(name="ユーザー",
+                            value=user.mention)
+        log_embed.add_field(name="モデレーター",
+                            value=f"<@{interaction.user.id}>")
+        log_embed.add_field(name="削除理由",
+                            value=f"{reason_str}", inline=False)
+        log_embed.add_field(name="記録へのリンク",
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
+        log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
+        # ログCHへケース情報を送信
+        # await channel_mod_log.send(embed=log_embed)
+        # DBへケースIDと記録スレッドIDを保存
+        # await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+        # 違反ユーザーのDMへ警告を送信
+        member = guild.get_member(user.id)
+        if member is not None:
+            try:
+                await user.send(embed=dm_embed)
+                for message in messages:
+                    create_time = message.created_at.astimezone(JP)
+                    create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
+                    await user.send(f"------------------------------\n送信日時：{create_time_str}")
+                    await message.forward(user)
+            except discord.Forbidden:
+                channel = await guild.fetch_channel(CHANNEL_ID_RULE)
+                thread = await channel.create_thread(name=f"ケース{case_id} | メッセージの削除",
+                                                     reason=f"ケース{case_id} ",
+                                                     invitable=False)
+                await thread.edit(locked=True)
+                await thread.send(user.mention)
+                await thread.send(embed=dm_embed)
+                for message in messages:
+                    create_time = message.created_at.astimezone(JP)
+                    create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
+                    await thread.send(f"------------------------------\n送信日時：{create_time_str}")
+                    await message.forward(thread)
+        for message in messages:
+            await message.delete()
+        # フォームへのレスポンス
+        response_embed = discord.Embed(description="ℹ️ メッセージを削除しました", color=Color_OK)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
+        # ログの保存
+        logger.info(
+            f"スタッフ：{interaction.user}（UID：{interaction.user.id}）がメッセージ：{self.message.jump_url}を削除しました。")
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """エラー発生時の処理"""
+        await discord_error(self.title, interaction, error, logger)
+
+
+class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変更指示"):
+    """メッセージ報告フォームの実装"""
+
+    def __init__(self, member):
+        super().__init__()
+        self.member = member
+
+    # フォームの入力項目の定義（最大5個）
+
+    type_select = discord.ui.Label(
+        text="プロフィールの種類",
+        component=discord.ui.Select(
+            options=[
+                discord.SelectOption(label="アバター"),
+                discord.SelectOption(label="ユーザー名"),
+                discord.SelectOption(label="アクティビティ/カスタムステータス"),
+            ],
+            min_values=1,
+            max_values=3,
+        ),
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """フォーム送信時の処理"""
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # ギルドとチャンネルの取得
+        guild = interaction.guild
+        channel = interaction.channel
+        role_wait_agree_rule = interaction.guild.get_role(ROLE_ID_WAIT_AGREE_RULE)
+        channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
+        channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
+        # コマンド実行日時の取得
+        dt = datetime.now(JP)
+        action_datetime = dt.strftime("%Y/%m/%d %H:%M")
+        # 警告メッセージの作成
+        profiles = ""
+        for profile_type in self.type_select.component.values:  # noqa
+            if profiles == "":
+                profiles = profile_type
+            else:
+                profiles = profiles + f"、{profile_type}"
+        activities = "なし"
+        for activity in self.member.activities:
+            if activities == "なし":
+                activities = activity.name
+            activities = activities + f"、{activity.name}"
+        avatar = await self.member.display_avatar.to_file(filename="avatar.png")
+        # DBへケース情報を保存
+        case_id = 9999
+        # case_id = await db.save_modlog(moderate_type=11, user_id=user.id, moderator_id=interaction.user.id, length="",
+        #                                reason=reason_str, datetime=action_datetime, point=0)
+        dm_embed = discord.Embed(title="WNHでのユーザープロフィールについて",
+                                 description="WNH運営チームです。\nあなたがWNHで使用している次のプロフィールは不適切と判断されました。\n"
+                                             "WNHの利用を再開するには、プロフィールを修正した上で、再度ルール同意ボタンを押してください。\n"
+                                             "プロフィールを修正せずにルール同意ボタンを押した場合、警告が発行される場合があります。"
+                                 )
+        dm_embed.add_field(name="ケース番号",
+                           value=f"{case_id}", inline=False)
+        dm_embed.add_field(name="不適切と判断されたプロフィールの種類",
+                           value=f"{profiles}", inline=False)
+        dm_embed.add_field(name="発行日時",
+                           value=f"{action_datetime}", inline=False)
+        dm_embed.add_field(name="この対応に対する質問・ご意見",
+                           value=f"この対応に対する質問・ご意見は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c",
+                           inline=False)
+        log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
+                                                   content=f"ユーザー情報：{self.member.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
+                                                           f"\nアクション種類：不適切なプロフィールの変更指示\nプロフィールの種類：{profiles}\n\n"
+                                                           f"表示名：{self.member.display_name}\nアバター：添付\nアクティビティ：{activities}",
+                                                   file=avatar)  # noqa
+        # ログCHへ送信するケース情報（Embed）を作成
+        log_embed = discord.Embed(title=f"ケース{case_id} | 不適切なプロフィールの変更指示 | {self.member.name}")
+        log_embed.add_field(name="ユーザー",
+                            value=self.member.mention)
+        log_embed.add_field(name="モデレーター",
+                            value=f"<@{interaction.user.id}>")
+        log_embed.add_field(name="プロフィールの種類",
+                            value=f"{profiles}", inline=False)
+        log_embed.add_field(name="記録へのリンク",
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
+        log_embed.set_footer(text=f"UID：{self.member.id}・{action_datetime}")
+        # ログCHへケース情報を送信
+        # await channel_mod_log.send(embed=log_embed)
+        # DBへケースIDと記録スレッドIDを保存
+        # await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)
+        # 違反ユーザーのDMへ通知を送信
+        if self.member in guild.members:
+            await self.member.edit(roles=[role_wait_agree_rule], reason=f"ケース{case_id}による")
+        try:
+            await self.member.send(embed=dm_embed)
+        except discord.Forbidden:
+            channel = await guild.fetch_channel(CHANNEL_ID_RULE)
+            thread = await channel.create_thread(name=f"ケース{case_id} | 不適切なプロフィールの変更指示",
+                                                 reason=f"ケース{case_id} ",
+                                                 invitable=False)
+            await thread.edit(locked=True)
+            await thread.send(self.member.mention)
+            await thread.send(embed=dm_embed)
+        # フォームへのレスポンス
+        response_embed = discord.Embed(description="ℹ️ 変更指示を送信しました。", color=Color_OK)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
+        # # ログの保存
+        # logger.info(
+        #     f"スタッフ：{interaction.user}（UID：{interaction.user.id}）がメッセージ：{self.message.jump_url}を削除しました。")
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """エラー発生時の処理"""
+        await discord_error(self.title, interaction, error, logger)
+
+
 class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
     """メッセージ報告フォームの実装"""
 
@@ -918,19 +1239,25 @@ class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
         super().__init__()
         self.message = message
 
-    # フォームの入力項目の定義（最大5個）
+    # # フォームの入力項目の定義（最大5個）
+    # warn = ui.TextDisplay("### 注意事項\n"
+    #                       "このフォームはメッセージの報告用です。不適切なアバターやニックネーム、VCでの行為の報告は、ユーザーを右クリックして「アプリ>ユーザーの報告」からお願いします。")
+
     input_warn = ui.TextInput(
         label="注意事項（入力しないでください）",
         style=discord.TextStyle.long,  # noqa
-        placeholder="このフォームはメッセージの報告用です。不適切なアバターやニックネーム、VCでの行為の報告は、ユーザーを右クリックして「アプリ>ユーザーの報告」からお願いします。",
+        placeholder="このフォームはユーザーの報告用です。報告したい特定のメッセージがある場合は、メッセージを右クリックして「アプリ>メッセージの報告」からお願いします。",
         max_length=1,
         required=False,
     )
-    input = ui.TextInput(
-        label="報告内容の詳細",
-        style=discord.TextStyle.long,  # noqa
-        placeholder="例：〇〇に対する暴言を吐いている",
-        max_length=300,
+
+    input_text = ui.Label(
+        text="報告内容の詳細",
+        component=ui.TextInput(
+            style=discord.TextStyle.long,  # noqa
+            placeholder="例：〇〇に対する暴言を吐いている",
+            max_length=300,
+        )
     )
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -945,9 +1272,9 @@ class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
         author_name = author.display_name
         avatar = author.display_avatar.url
         # 報告日時の記録
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        dt = datetime.now(JP)
         report_datetime = dt.strftime("%Y/%m/%d %H:%M")
-        ts = int(datetime.datetime.timestamp(dt))
+        ts = int(datetime.timestamp(dt))
         # メッセージリンクの生成
         url = self.message.jump_url
         # 報告メッセージの生成
@@ -960,7 +1287,7 @@ class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
         else:
             embed.add_field(name="報告対象のメッセージの内容", value=f"{self.message.content}", inline=False)
         embed.add_field(name="報告したユーザー", value=f"<@{uid}>", inline=False)
-        embed.add_field(name="報告内容の詳細", value=self.input.value, inline=False)
+        embed.add_field(name="報告内容の詳細", value=self.input_text.component.value, inline=False)  # noqa
         embed.add_field(name="報告日時", value=f"<t:{ts}:F>", inline=False)
         embed.add_field(name="ID", value=f"```ini\nUser = {author.id}\nMessage = {self.message.id}```", inline=False)
         # 報告メッセージの送信
@@ -985,21 +1312,21 @@ class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.followup.send(embed=embed, ephemeral=True)
-        # ログの保存
-        logger.info(f"フォーム「メッセージの報告」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
     """ユーザー報告フォームの実装"""
 
-    def __init__(self, user):
+    def __init__(self, member):
         super().__init__()
-
-        self.user = user
+        self.member = member
 
     # フォームの入力項目の定義（最大5個）
+
+    # warn = ui.TextDisplay("### 注意事項\n"
+    #                       "このフォームはメッセージの報告用です。不適切なアバターやニックネーム、VCでの行為の報告は、ユーザーを右クリックして「アプリ>ユーザーの報告」からお願いします。")
+
     input_warn = ui.TextInput(
         label="注意事項（入力しないでください）",
         style=discord.TextStyle.long,  # noqa
@@ -1008,37 +1335,39 @@ class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
         required=False,
     )
 
-    input = ui.TextInput(
-        label="報告内容の詳細",
-        style=discord.TextStyle.long,  # noqa
-        placeholder="例：不適切なユーザー名を設定している",
-        max_length=300,
+    input_text = ui.Label(
+        text="報告内容の詳細",
+        component=ui.TextInput(
+            style=discord.TextStyle.long,  # noqa
+            placeholder="例：不適切なユーザー名を設定している",
+            max_length=300,
+        )
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         """フォーム送信時の処理"""
         # ギルドとチャンネルの取得
+        await interaction.response.defer(ephemeral=True)  # noqa
         channel_report_log = await interaction.guild.fetch_channel(CHANNEL_ID_REPORT_LOG)
         # フォームを送信したユーザー情報を取得
         report_user = interaction.user
         uid = report_user.id
         # 報告対象のユーザー情報を取得
-        user = interaction.guild.get_member(self.user.id)
-        server_name = user.display_name
-        avatar = self.user.display_avatar
+        server_name = self.member.display_name
+        avatar = self.member.display_avatar
         # 報告日時の記録
-        dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        dt = datetime.now(JP)
         report_datetime = dt.strftime("%Y/%m/%d %H:%M")
-        ts = int(datetime.datetime.timestamp(dt))
+        ts = int(datetime.timestamp(dt))
         # 報告メッセージの生成
         embed = discord.Embed(title="不適切なユーザーが報告されました", color=0x0000ff)
-        embed.set_author(name=user, icon_url=avatar.url)
-        embed.add_field(name="報告対象のユーザー", value=f"<@{self.user.id}>", inline=False)
+        embed.set_author(name=self.member, icon_url=avatar.url)
+        embed.add_field(name="報告対象のユーザー", value=f"<@{self.member.id}>", inline=False)
         embed.add_field(name="報告時の対象ユーザーの表示名", value=f"{server_name}", inline=False)
         embed.add_field(name="報告したユーザー", value=f"<@{uid}>", inline=False)
-        embed.add_field(name="報告内容の詳細", value=self.input.value, inline=False)
+        embed.add_field(name="報告内容の詳細", value=self.input_text.component.value, inline=False)  # noqa
         embed.add_field(name="報告日時", value=f"<t:{ts}:F>", inline=False)
-        embed.add_field(name="ID", value=f"```ini\nUser = {user.id}```", inline=False)
+        embed.add_field(name="ID", value=f"```ini\nUser = {self.member.id}```", inline=False)
         # 報告メッセージの送信
         msg = await channel_report_log.send(embed=embed)
         thread = await msg.create_thread(name=f"ユーザーの報告 - {server_name}")
@@ -1048,17 +1377,14 @@ class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
         await thread.send(embed=avatar_embed, file=f)
         # フォームへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 報告を受け付けました", color=Color_OK)
-        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
-            f"ユーザー：{interaction.user}（UID：{interaction.user.id}）がユーザー：{server_name}（UID：{self.user.id}）を報告しました。")
+            f"ユーザー：{interaction.user}（UID：{interaction.user.id}）がユーザー：{server_name}（UID：{self.member.id}）を報告しました。")
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        response_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「ユーザーの報告」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 async def setup(bot):

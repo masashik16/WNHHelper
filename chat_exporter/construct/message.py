@@ -85,6 +85,14 @@ class MessageConstruct:
 
         self.message_created_at, self.message_edited_at = self.set_time()
         self.meta_data = meta_data
+        self.forwarded = False
+        self.forwarded_class = ""
+        self.forwarded_info = ""
+
+    def get_message_snapshots(self):
+        if hasattr(self.message, "message_snapshots"):
+            return self.message.message_snapshots
+        return []
 
     async def construct_message(
         self,
@@ -150,7 +158,7 @@ class MessageConstruct:
             ]
 
     async def build_content(self):
-        if not self.message.content:
+        if not self.message.content and not self.get_message_snapshots():
             self.message.content = ""
             return
 
@@ -162,6 +170,33 @@ class MessageConstruct:
             ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
             ("EDIT", self.message_edited_at, PARSE_MODE_NONE)
         ])
+
+        snapshots = self.get_message_snapshots()
+        if snapshots:
+            self.message.content = f"{self.message.content} {' '.join(s.content for s in snapshots if hasattr(s, 'content'))}"
+            self.forwarded = True
+            self.forwarded_class = "quote"
+            self.forwarded_info = """
+                                <div class="chatlog__forwarded">
+                    <svg aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+                        <path fill="#b5b6b8" d="M21.7 7.3a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4-1.4L18.58 9H13a7 7 0 0 0-7 7v4a1 1 0 1 1-2 0v-4a9 9 0 0 1 9-9h5.59l-3.3-3.3a1 1 0 0 1 1.42-1.4l5 5Z" class=""></path>
+                    </svg>
+                    転送済み
+                </div>
+            """
+
+        if self.forwarded:
+            span_class = "chatlog__markdown-preserve_forwarded"
+        else:
+            span_class = "chatlog__markdown-preserve"
+
+        self.message.content = await fill_out(
+                self.guild, message_content, [
+                    ("MESSAGE_CONTENT", self.message.content, PARSE_MODE_MARKDOWN),
+                    ("EDIT", self.message_edited_at, PARSE_MODE_NONE),
+                    ("SPAN_CLASS", span_class, PARSE_MODE_NONE),
+                ],
+            )
 
     async def build_reference(self):
         if not self.message.reference:
@@ -175,6 +210,9 @@ class MessageConstruct:
                 message: discord.Message = await self.message.channel.fetch_message(self.message.reference.message_id)
             except (discord.NotFound, discord.HTTPException) as e:
                 self.message.reference = ""
+                if self.forwarded:
+                    self.message.reference = ""
+                    return
                 if isinstance(e, discord.NotFound):
                     self.message.reference = message_reference_unknown
                 return
@@ -253,13 +291,30 @@ class MessageConstruct:
         ])
 
     async def build_sticker(self):
-        if not self.message.stickers or not hasattr(self.message.stickers[0], "url"):
+        sticker = None
+        sticker_image_url = None
+
+        if self.message.stickers and hasattr(self.message.stickers[0], "url"):
+            sticker_image_url = self.message.stickers[0].url
+        if not sticker_image_url:
+            for snapshot in self.get_message_snapshots():
+                if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                    sticker_image_url = snapshot.stickers[0].url
+
+                    break
+
+        if not sticker_image_url:
             return
 
-        sticker_image_url = self.message.stickers[0].url
 
         if sticker_image_url.endswith(".json"):
-            sticker = await self.message.stickers[0].fetch()
+            try:
+                sticker = await self.message.stickers[0].fetch()
+            except:
+                for snapshot in self.get_message_snapshots():
+                    if hasattr(snapshot, "stickers") and snapshot.stickers and hasattr(snapshot.stickers[0], "url"):
+                        sticker = await snapshot.stickers[0].fetch()
+                        break
             sticker_image_url = (
                 f"https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
             )
@@ -273,13 +328,30 @@ class MessageConstruct:
         for e in self.message.embeds:
             self.embeds += await Embed(e, self.guild).flow()
 
+        for snapshot in self.get_message_snapshots():
+            for se in snapshot.embeds:
+                self.embeds += await Embed(se, self.guild).flow()
+
+
         for a in self.message.attachments:
             if self.attachment_handler and isinstance(self.attachment_handler, AttachmentHandler):
                 a = await self.attachment_handler.process_asset(a)
             self.attachments += await Attachment(a, self.guild).flow()
 
+        for snapshot in self.get_message_snapshots():
+            for sa in snapshot.attachments:
+                if self.attachment_handler:
+                    sa = await self.attachment_handler.process_asset(sa)
+                self.attachments += await Attachment(sa,self.guild).flow()
+
+
         for c in self.message.components:
             self.components += await Component(c, self.guild).flow()
+
+        for snapshot in self.get_message_snapshots():
+            for ac in snapshot.components:
+                self.components += await Component(ac,self.guild).flow()
+
 
         for r in self.message.reactions:
             self.reactions += await Reaction(r, self.guild).flow()
@@ -303,8 +375,9 @@ class MessageConstruct:
             ("TIMESTAMP", self.message_created_at, PARSE_MODE_NONE),
             # ("TIME", self.message_created_at.split(maxsplit=4)[4], PARSE_MODE_NONE),
             ("TIME", self.message_created_at.split(maxsplit=4)[2], PARSE_MODE_NONE),
+            ("FORWARDED_CLASS", self.forwarded_class, PARSE_MODE_NONE),
+            ("FORWARDED_INFO", self.forwarded_info, PARSE_MODE_NONE)
         ])
-
         return self.message_html
 
     def _generate_message_divider_check(self):
@@ -346,6 +419,7 @@ class MessageConstruct:
             time = local_time.strftime("%H:%M")
             default_timestamp = f"{date} ({weekday}) {time}"
 
+
             self.message_html += await fill_out(self.guild, start_message, [
                 ("REFERENCE_SYMBOL", followup_symbol, PARSE_MODE_NONE),
                 ("REFERENCE", self.message.reference if self.message.reference else self.interaction,
@@ -364,7 +438,9 @@ class MessageConstruct:
                 ("EMBEDS", self.embeds, PARSE_MODE_NONE),
                 ("ATTACHMENTS", self.attachments, PARSE_MODE_NONE),
                 ("COMPONENTS", self.components, PARSE_MODE_NONE),
-                ("EMOJI", self.reactions, PARSE_MODE_NONE)
+                ("EMOJI", self.reactions, PARSE_MODE_NONE),
+                ("FORWARDED_CLASS", self.forwarded_class, PARSE_MODE_NONE),
+                ("FORWARDED_INFO", self.forwarded_info, PARSE_MODE_NONE)
             ])
 
             return True

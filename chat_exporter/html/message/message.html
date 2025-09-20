@@ -4,7 +4,9 @@
                         <div class="chatlog__short-timestamp" data-timestamp="{{TIMESTAMP}}">{{TIME}}</div>
                     </div>
                     <div class="chatlog__message-primary">
-                        <div class="chatlog__content chatlog__markdown" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                        <div class="chatlog__content chatlog__markdown {{FORWARDED_CLASS}}" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                            {{FORWARDED_INFO}}
+
                             {{MESSAGE_CONTENT}}
 
                             {{ATTACHMENTS}}

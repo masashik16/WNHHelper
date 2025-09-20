@@ -21,9 +21,6 @@ Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("give_take_role")
 
-tz = datetime.timezone(datetime.timedelta(hours=9))
-time = datetime.time(hour=7, minute=0, tzinfo=tz)
-
 
 class GiveTakeRole(commands.Cog):
     """コマンド実装用のクラス"""
