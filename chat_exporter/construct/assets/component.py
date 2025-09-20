@@ -173,7 +173,6 @@ class Component:
         self.thumbnails += await Attachment(c, self.guild).flow()
 
     async def build_media_gallery(self, c):
-        print("A")
         for i in c.items:
             self.gallery_medias += await Attachment(i.media, self.guild).flow()
         self.media_galleries = f'<div class="chatlog__components">{self.gallery_medias}</div>'

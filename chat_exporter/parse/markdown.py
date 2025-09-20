@@ -184,7 +184,6 @@ class ParseMarkdown:
         y = None
         new_content = ""
         pattern = re.compile(r"^&gt;\s(.+)")
-
         if len(self.content) == 1:
             if re.search(pattern, self.content[0]):
                 self.content = f'<div class="quote">{self.content[0][5:]}</div>'
@@ -207,7 +206,6 @@ class ParseMarkdown:
 
         if y:
             new_content = new_content + f'<div class="quote">{y}</div>'
-
         self.content = new_content
 
     def parse_code_block_markdown(self, reference=False):
