@@ -191,6 +191,7 @@ class CreateTicketView(ui.LayoutView):
         elif select_value == "OPINION":
             await interaction.response.send_modal(InquiryForm())  # noqa
         else:
+            await interaction.message.edit(view=CreateTicketView())
             await interaction.response.defer()  # noqa
             # ドロップダウンの選択項目を初期化
             await interaction.message.edit(view=CreateTicketView())
@@ -200,6 +201,7 @@ class CreateTicketView(ui.LayoutView):
             # DBからチケット番号を取得
             if ENV == "prod":
                 channel_number_db = await get_inquiry_number(select_value)
+                await interaction.message.edit(view=CreateTicketView())
             else:
                 channel_number_db = 1
             channel_number = f"{channel_number_db:04}"
