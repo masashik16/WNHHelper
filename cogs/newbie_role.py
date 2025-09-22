@@ -1,8 +1,8 @@
 import os
 
 import discord
-from discord import ui
 from discord import app_commands
+from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -109,95 +109,101 @@ class NewbieButton(ui.View):
 
     @ui.button(label="まったり", emoji="🔵", style=discord.ButtonStyle.blurple, custom_id="mattari")  # noqa
     async def button_mattari(self, interaction: discord.Interaction, button: ui.Button):
-        """まったりロール用ボタン押下時の処理"""
-        # ギルドとロールの取得
-
-        role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
-        role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
-        # ボタンを押したユーザーの取得
-        member = interaction.guild.get_member(interaction.user.id)
-        # ロール保有状況の取得
-        role = member.get_role(ROLE_ID_MATTARI)
-        # まったりロールを保有している場合は削除
-        if role is not None:
-            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を削除しました。", color=Color_OK)
-            await member.remove_roles(role_mattari, reason="初心者用ボタンによる")
-            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-        else:
-            await interaction.response.defer(ephemeral=True)  # noqa
-            # DBからWargaming UIDを取得し代入
-            user_info_result = await db.search_user(interaction.user.id)
-            discord_id, account_id, region = user_info_result
-            # 戦闘数の照会と代入
-            wg_api_result = await api.wows_user_info(account_id, region)
-            nickname, battles = wg_api_result
-            # 戦績非公開の場合
-            if battles == "private":
-                # ボタンへのレスポンス
-                response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
-                                               color=Color_WARN)
-                await interaction.followup.send(embed=response_embed, ephemeral=True)
-            else:
-                # 戦闘数が3000戦以上の場合
-                if role is None and battles > 3000:
-                    # Embedの作成と送信
-                    response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
-                    await interaction.followup.send(embed=response_embed, ephemeral=True)
-                # 戦闘数が3000戦以下の場合
-                elif role is None and battles <= 3000:
-                    # がつがつロールを保有している場合は削除
-                    await member.remove_roles(role_gatsu, reason="初心者用ボタンによる")
-                    # まったりロールを付与
-                    await member.add_roles(role_mattari, reason="初心者用ボタンによる")
-                    # ボタンへのレスポンス
-                    response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を付与しました。",
-                                                   color=Color_OK)
-                    await interaction.followup.send(embed=response_embed, ephemeral=True)
+        await role_mattari_callback(interaction, button)
 
     @ui.button(label="がつがつ", emoji="🟠", style=discord.ButtonStyle.blurple, custom_id="gatugatu")  # noqa
     async def button_gatsu(self, interaction: discord.Interaction, button: ui.Button):
-        """がつがつロール用ボタン押下時の処理"""
-        # ギルドとロールの取得
+        await role_gatsu_callback(interaction, button)
 
-        role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
-        role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
-        # ボタンを押したユーザーの取得
-        member = interaction.guild.get_member(interaction.user.id)
-        # ロール保有状況の取得
-        role = member.get_role(ROLE_ID_GATSU)
-        # がつがつロールを保有している場合は削除
-        if role is not None:
-            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を削除しました。", color=Color_OK)
-            await member.remove_roles(role_gatsu, reason="初心者用ボタンによる")
-            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+
+async def role_mattari_callback(interaction: discord.Interaction, button: ui.Button):
+    """まったりロール用ボタン押下時の処理"""
+    # ギルドとロールの取得
+    role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
+    role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
+    # ボタンを押したユーザーの取得
+    member = interaction.guild.get_member(interaction.user.id)
+    # ロール保有状況の取得
+    role = member.get_role(ROLE_ID_MATTARI)
+    # まったりロールを保有している場合は削除
+    if role is not None:
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を削除しました。", color=Color_OK)
+        await member.remove_roles(role_mattari, reason="初心者用ボタンによる")
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+    else:
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # DBからWargaming UIDを取得し代入
+        user_info_result = await db.search_user(interaction.user.id)
+        discord_id, account_id, region = user_info_result
+        # 戦闘数の照会と代入
+        wg_api_result = await api.wows_user_info(account_id, region)
+        nickname, battles = wg_api_result
+        # 戦績非公開の場合
+        if battles == "private":
+            # ボタンへのレスポンス
+            response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
+                                           color=Color_WARN)
+            await interaction.followup.send(embed=response_embed, ephemeral=True)
         else:
-            await interaction.response.defer(ephemeral=True)  # noqa
-            # DBからWargaming UIDを取得し代入
-            user_info_result = await db.search_user(interaction.user.id)
-            discord_id, account_id, region = user_info_result
-            # 戦闘数の照会と代入
-            wg_api_result = await api.wows_user_info(account_id, region)
-            nickname, battles = wg_api_result
-            # 戦績非公開の場合
-            if battles == "private":
-                # ボタンへのレスポンス
-                response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
-                                               color=Color_WARN)
+            # 戦闘数が3000戦以上の場合
+            if role is None and battles > 3000:
+                # Embedの作成と送信
+                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
                 await interaction.followup.send(embed=response_embed, ephemeral=True)
-            else:
-                # 戦闘数が3000戦以上の場合
-                if role is None and battles >= 3000:
-                    response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
-                    await interaction.followup.send(embed=response_embed, ephemeral=True)
-                # 戦闘数が3000戦以下の場合
-                elif role is None and battles < 3000:
-                    # まったりロールを保有している場合は削除
-                    await member.remove_roles(role_mattari, reason="初心者用ボタンによる")
-                    # がつがつロールを付与
-                    await member.add_roles(role_gatsu, reason="初心者用ボタンによる")
-                    # ボタンへのレスポンス
-                    response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を付与しました。", color=Color_OK)
-                    await interaction.followup.send(embed=response_embed, ephemeral=True)
+            # 戦闘数が3000戦以下の場合
+            elif role is None and battles <= 3000:
+                # がつがつロールを保有している場合は削除
+                await member.remove_roles(role_gatsu, reason="初心者用ボタンによる")
+                # まったりロールを付与
+                await member.add_roles(role_mattari, reason="初心者用ボタンによる")
+                # ボタンへのレスポンス
+                response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を付与しました。",
+                                               color=Color_OK)
+                await interaction.followup.send(embed=response_embed, ephemeral=True)
+
+
+async def role_gatsu_callback(interaction: discord.Interaction, button: ui.Button):
+    """がつがつロール用ボタン押下時の処理"""
+    # ギルドとロールの取得
+    role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
+    role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
+    # ボタンを押したユーザーの取得
+    member = interaction.guild.get_member(interaction.user.id)
+    # ロール保有状況の取得
+    role = member.get_role(ROLE_ID_GATSU)
+    # がつがつロールを保有している場合は削除
+    if role is not None:
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を削除しました。", color=Color_OK)
+        await member.remove_roles(role_gatsu, reason="初心者用ボタンによる")
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+    else:
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # DBからWargaming UIDを取得し代入
+        user_info_result = await db.search_user(interaction.user.id)
+        discord_id, account_id, region = user_info_result
+        # 戦闘数の照会と代入
+        wg_api_result = await api.wows_user_info(account_id, region)
+        nickname, battles = wg_api_result
+        # 戦績非公開の場合
+        if battles == "private":
+            # ボタンへのレスポンス
+            response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
+                                           color=Color_WARN)
+            await interaction.followup.send(embed=response_embed, ephemeral=True)
+        else:
+            # 戦闘数が3000戦以上の場合
+            if role is None and battles >= 3000:
+                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
+                await interaction.followup.send(embed=response_embed, ephemeral=True)
+            # 戦闘数が3000戦以下の場合
+            elif role is None and battles < 3000:
+                # まったりロールを保有している場合は削除
+                await member.remove_roles(role_mattari, reason="初心者用ボタンによる")
+                # がつがつロールを付与
+                await member.add_roles(role_gatsu, reason="初心者用ボタンによる")
+                # ボタンへのレスポンス
+                response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を付与しました。", color=Color_OK)
+                await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 
 async def setup(bot):

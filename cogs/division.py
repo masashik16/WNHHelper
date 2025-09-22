@@ -2,7 +2,6 @@ import os
 import time
 
 import discord
-from discord import app_commands
 from discord import ui
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -34,7 +33,7 @@ class Division(commands.Cog):
         """分隊募集ボタンを作成"""
         # ビューを含むメッセージを送信
         channel = interaction.channel
-        await channel.send(view=DivisionView(),allowed_mentions=DISALLOW_MENTION)
+        await channel.send(view=DivisionView(), allowed_mentions=DISALLOW_MENTION)
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
@@ -75,28 +74,34 @@ class DivisionView(ui.LayoutView):
     @action_row.button(label="分隊通知ロールの取得/解除", emoji="🤝", style=discord.ButtonStyle.blurple,  # noqa
                        custom_id="division")  # noqa
     async def division_role_button(self, interaction: discord.Interaction, button: ui.Button):
-        """ボタン押下時の処理"""
-        div_role = interaction.guild.get_role(ROLE_ID_DIVISION)
-        role = interaction.user.get_role(ROLE_ID_DIVISION)
-        if role is not None:
-            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を削除しました。", color=Color_OK)
-            await interaction.user.remove_roles(div_role, reason="分隊ロールボタンによる")
-            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-        else:
-            response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を取得しました。", color=Color_OK)
-            await interaction.user.add_roles(div_role, reason="分隊ロールボタンによる")
-            await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+        await division_role_button_callback(interaction, button)
 
     @action_row.button(label="分隊を募集する", style=discord.ButtonStyle.blurple,  # noqa
                        custom_id="division_role")
     async def division_form_button(self, interaction: discord.Interaction, button: ui.Button):
-        """ボタン押下時の処理"""
-        if interaction.user.is_timed_out():
-            error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-        else:
-            # フォームの呼び出し
-            await interaction.response.send_modal(DivisionForm())  # noqa
+        await division_role_button_callback(interaction, button)
+
+
+async def division_role_button_callback(interaction: discord.Interaction, button: ui.Button):
+    div_role = interaction.guild.get_role(ROLE_ID_DIVISION)
+    role = interaction.user.get_role(ROLE_ID_DIVISION)
+    if role is not None:
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を削除しました。", color=Color_OK)
+        await interaction.user.remove_roles(div_role, reason="分隊ロールボタンによる")
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+    else:
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を取得しました。", color=Color_OK)
+        await interaction.user.add_roles(div_role, reason="分隊ロールボタンによる")
+        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+
+
+async def division_form_button_callback(interaction: discord.Interaction, button: ui.Button):
+    if interaction.user.is_timed_out():
+        error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=Color_ERROR)
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+    else:
+        # フォームの呼び出し
+        await interaction.response.send_modal(DivisionForm())  # noqa
 
 
 class DivisionForm(ui.Modal, title="分隊募集フォーム"):
@@ -165,7 +170,8 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         # 分隊募集メッセージ（Embed）の作成
         embed = discord.Embed(title=f"分隊募集中！", color=0x0000ff)
         embed.add_field(name="1.日時", value=self.dtime.component.value, inline=False)  # noqa
-        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.component.value, inline=False)  # noqa
+        embed.add_field(name="2. Tier（オペレーションの場合は名称）", value=self.tier.component.value,
+                        inline=False)  # noqa
         embed.add_field(name="3. 募集人数", value=self.member_count.component.value, inline=False)  # noqa
         embed.add_field(name="4. 初心者ですか？", value=self.newbie.component.values[0], inline=False)  # noqa
         if not self.other.component.value == "":  # noqa
