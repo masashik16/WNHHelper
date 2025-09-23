@@ -79,7 +79,7 @@ class DivisionView(ui.LayoutView):
     @action_row.button(label="分隊を募集する", style=discord.ButtonStyle.blurple,  # noqa
                        custom_id="division_role")
     async def division_form_button(self, interaction: discord.Interaction, button: ui.Button):
-        await division_role_button_callback(interaction, button)
+        await division_form_button_callback(interaction, button)
 
 
 async def division_role_button_callback(interaction: discord.Interaction, button: ui.Button):
