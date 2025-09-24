@@ -17,3 +17,4 @@
 /uninstall.txt
 /flask_session/
 /views/backup/
+**/__pycache__/**
