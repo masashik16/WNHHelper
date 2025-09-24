@@ -7,6 +7,7 @@ import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import timedelta
 
+from authlib.integrations.flask_client import OAuth
 from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
 from flask import abort, Flask, render_template, request
@@ -43,7 +44,6 @@ hypercorn_error_logger.setLevel(logging.ERROR)
 shutdown_event = asyncio.Event()
 
 
-
 class App(Flask):
     def run_task(
             self,
@@ -74,6 +74,7 @@ bot_obj = None
 public_url = None
 server_task = None
 _app = App(__name__, static_url_path="/")
+oauth = OAuth()
 sess = Session()
 
 
@@ -94,6 +95,7 @@ def create_app(bot, loop) -> Flask:
     )
     public_url = f"{DOMAIN}/"
     _app.register_blueprint(app_wg_auth(bot, loop))
+    oauth.init_app(_app)
     sess.init_app(_app)
     return _app
 
@@ -160,20 +162,25 @@ def handle_custom_error(e):
                            error_code=e.error_code), e.response_code
 
 
-# 認証用リンクの生成
+oauth.register(
+    name="discord_std",
+    client_id=client_id,
+    client_secret=client_secret,
+    authorize_url="https://discord.com/api/oauth2/authorize",
+    access_token_url="https://discord.com/api/oauth2/token",
+    client_kwargs={
+        "scope": "identify",
+        "prompt": "consent"
+    },
+)
+
+
 def wg_auth_link():
     """ASIAサーバー用認証リンクの生成"""
-    callback_url = DOMAIN + f"/wg_link"
-    login_url = "https://discord.com/api/oauth2/authorize?response_type=code&client_id=" + client_id + "&scope=identify&redirect_uri=" + callback_url + "&prompt=consent"
-    return login_url
-
-
-def clan_auth_link():
-    """ASIAサーバー用認証リンクの生成"""
-    callback_url = DOMAIN + f"/clan_edit"
-    login_url = "https://discord.com/api/oauth2/authorize?response_type=code&client_id=" + client_id + "&scope=identify+guilds.members.read&redirect_uri=" + callback_url + "&prompt=consent"
-    return login_url
-
+    discord_std = oauth.discord_std
+    redirect_uri = DOMAIN + f"/wg_link"
+    url = discord_std.create_authorization_url(redirect_uri)
+    return url["url"]
 
 def run_server(bot, loop):
     """サーバーの起動"""

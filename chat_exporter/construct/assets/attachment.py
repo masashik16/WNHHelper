@@ -1,5 +1,7 @@
 import math
 
+import discord
+
 from chat_exporter.ext.discord_utils import DiscordUtils
 from chat_exporter.ext.html_generator import (
     fill_out,
@@ -7,6 +9,9 @@ from chat_exporter.ext.html_generator import (
     msg_attachment,
     audio_attachment,
     video_attachment,
+    component_media_gallery_image,
+    component_media_gallery_video,
+    component_thumbnail,
     PARSE_MODE_NONE,
 )
 
@@ -21,14 +26,24 @@ class Attachment:
         return self.attachments
 
     async def build_attachment(self):
-        if self.attachments.content_type is not None:
+        if isinstance(self.attachments, discord.Attachment):
+            if self.attachments.content_type is not None:
+                if "image" in self.attachments.content_type:
+                    return await self.image()
+                elif "video" in self.attachments.content_type:
+                    return await self.video()
+                elif "audio" in self.attachments.content_type:
+                    return await self.audio()
+            await self.file()
+        elif isinstance(self.attachments, discord.ThumbnailComponent):
+            return await self.ui_thumbnail()
+        elif isinstance(self.attachments, discord.UnfurledMediaItem):
             if "image" in self.attachments.content_type:
-                return await self.image()
+                return await self.ui_image()
             elif "video" in self.attachments.content_type:
-                return await self.video()
-            elif "audio" in self.attachments.content_type:
-                return await self.audio()
-        await self.file()
+                return await self.ui_video()
+        else:
+            await self.ui_file()
 
     async def image(self):
         self.attachments = await fill_out(self.guild, img_attachment, [
@@ -44,13 +59,14 @@ class Attachment:
     async def audio(self):
         file_icon = DiscordUtils.file_attachment_audio
         file_size = self.get_file_size(self.attachments.size)
+        filename = self.attachments.url.split("://")[1]
 
         self.attachments = await fill_out(self.guild, audio_attachment, [
             ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
             ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
             ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
             ("ATTACH_AUDIO", self.attachments.proxy_url, PARSE_MODE_NONE),
-            ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE)
+            ("ATTACH_FILE", str(filename), PARSE_MODE_NONE)
         ])
 
     async def file(self):
@@ -63,6 +79,37 @@ class Attachment:
             ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
             ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
             ("ATTACH_FILE", str(self.attachments.filename), PARSE_MODE_NONE)
+        ])
+
+    async def ui_image(self):
+        self.attachments = await fill_out(self.guild, component_media_gallery_image, [
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE),
+            ("ATTACH_URL_THUMB", self.attachments.proxy_url, PARSE_MODE_NONE)
+        ])
+
+    async def ui_video(self):
+        self.attachments = await fill_out(self.guild, component_media_gallery_video, [
+            ("ATTACH_URL", self.attachments.proxy_url, PARSE_MODE_NONE)
+        ])
+
+
+
+    async def ui_file(self):
+        file_icon = await self.get_file_icon()
+
+        file_size = self.get_file_size(self.attachments.size)
+
+        self.attachments = await fill_out(self.guild, msg_attachment, [
+            ("ATTACH_ICON", file_icon, PARSE_MODE_NONE),
+            ("ATTACH_URL", self.attachments.media.proxy_url, PARSE_MODE_NONE),
+            ("ATTACH_BYTES", str(file_size), PARSE_MODE_NONE),
+            ("ATTACH_FILE", str(self.attachments.name), PARSE_MODE_NONE)
+        ])
+
+    async def ui_thumbnail(self):
+        self.attachments = await fill_out(self.guild, component_thumbnail, [
+            ("ATTACH_URL", self.attachments.media.proxy_url, PARSE_MODE_NONE),
+            ("ATTACH_URL_THUMB", self.attachments.media.proxy_url, PARSE_MODE_NONE)
         ])
 
     @staticmethod
@@ -88,7 +135,12 @@ class Attachment:
             "arj", "pkg", "z"
         )
 
-        for tmp in [self.attachments.proxy_url, self.attachments.filename]:
+        if isinstance(self.attachments, discord.Attachment):
+            l = [self.attachments.proxy_url, self.attachments.filename]
+        else:
+            l = [self.attachments.media.proxy_url, self.attachments.name]
+
+        for tmp in l:
             if not tmp:
                 continue
             extension = tmp.rsplit('.', 1)[-1]
@@ -102,5 +154,5 @@ class Attachment:
                 return DiscordUtils.file_attachment_document
             elif extension in archive_types:
                 return DiscordUtils.file_attachment_archive
-        
+
         return DiscordUtils.file_attachment_unknown

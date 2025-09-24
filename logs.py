@@ -1,11 +1,14 @@
 __all__ = ["logger", "handler"]
 
-import datetime
+from datetime import datetime
 import logging.handlers
 import os
 
+import pytz
+
+JP = pytz.timezone("Asia/Tokyo")
 PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    f"logs/{datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime('%Y-%m-%d %H-%M-%S')}.log")
+                    f"logs/{datetime.now(JP).strftime('%Y-%m-%d %H-%M-%S')}.log")
 
 logger = logging.getLogger("WNHHelper")
 

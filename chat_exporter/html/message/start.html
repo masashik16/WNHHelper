@@ -13,7 +13,9 @@
                     <span class="chatlog__timestamp" data-timestamp="{{TIMESTAMP}}">{{DEFAULT_TIMESTAMP}}</span>
                 </div>
 
-                <div class="chatlog__content chatlog__markdown" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                <div class="chatlog__content chatlog__markdown {{FORWARDED_CLASS}}" data-message-id="{{MESSAGE_ID}}" id="message-{{MESSAGE_ID}}">
+                    {{FORWARDED_INFO}}
+
                     {{MESSAGE_CONTENT}}
 
                     {{ATTACHMENTS}}

@@ -1,6 +1,7 @@
 import datetime
 import html
 import traceback
+from datetime import datetime
 
 import re
 from typing import List, Optional
@@ -32,8 +33,8 @@ class TranscriptDAO:
         pytz_timezone,
         military_time: bool,
         fancy_times: bool,
-        before: Optional[datetime.datetime],
-        after: Optional[datetime.datetime],
+        before: Optional[datetime],
+        after: Optional[datetime],
         support_dev: bool,
         bot: Optional[discord.Client],
         attachment_handler: Optional[AttachmentHandler],
@@ -77,10 +78,10 @@ class TranscriptDAO:
 
         timezone = pytz.timezone(self.pytz_timezone)
         # if self.military_time:
-        #     time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
+        #     time_now = datetime.now(timezone).strftime("%e %B %Y at %H:%M:%S (%Z)")
         # else:
-        #     time_now = datetime.datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
-        local_time = datetime.datetime.now(timezone)
+        #     time_now = datetime.now(timezone).strftime("%e %B %Y at %I:%M:%S %p (%Z)")
+        local_time = datetime.now(timezone)
         day_name = "月火水木金土日"
         weekday = day_name[local_time.weekday()]
         date = local_time.strftime("%Y/%m/%d")

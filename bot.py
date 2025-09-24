@@ -18,6 +18,7 @@ TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 # 接続に必要なオブジェクトを生成
 MY_GUILD = discord.Object(id=GUILD_ID)
+DISALLOW_MENTION = discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False)
 
 # 読み込むCogの名前を格納
 INITIAL_EXTENSIONS = [
@@ -26,14 +27,14 @@ INITIAL_EXTENSIONS = [
     "cogs.cmd1",
     "cogs.cmd2",
     "cogs.event",
-    "cogs.discord_event",
-    "cogs.division",
-    "cogs.give_take_role",
+    # "cogs.discord_event",
+    # "cogs.division",
+    # "cogs.give_take_role",
     "cogs.mod",
     "cogs.msg",
-    "cogs.newbie_role",
+    # "cogs.newbie_role",
     "cogs.rule",
-    # "cogs.test"
+    "cogs.test"
 ]
 
 

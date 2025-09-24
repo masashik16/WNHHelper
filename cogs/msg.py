@@ -1,9 +1,10 @@
-import datetime
+from datetime import datetime
 import io
 import os
 import re
 
 import discord
+import pytz
 from discord import app_commands
 from discord import ui
 from discord.ext import commands
@@ -11,6 +12,7 @@ from dotenv import load_dotenv
 
 import chat_exporter
 from bot import check_developer
+from exception import discord_error
 from logs import logger
 
 env_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -27,6 +29,7 @@ Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
 logger = logger.getChild("msg")
+JP = pytz.timezone("Asia/Tokyo")
 
 
 class Message(commands.Cog):
@@ -82,9 +85,6 @@ class Message(commands.Cog):
         elif message == "no_role":
             rule = self.bot.get_cog("Rule")
             await rule.create_message2(interaction)  # noqa
-        # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
-        await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}:{message}」を使用しました。")
@@ -124,12 +124,15 @@ class Message(commands.Cog):
         dm = await user.create_dm()
         messages = [message async for message in dm.history(limit=200, oldest_first=True)]
         if messages:
-            dt = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+            dt = datetime.now(JP)
             dt_str = dt.strftime("%Y/%m/%d %H:%M")
             thread_message = await interaction.channel.send(f"DM履歴 - {user.mention} - {dt_str}取得")
-            thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得", message=thread_message)
+            if type(interaction.channel) == discord.Thread:
+                thread = interaction.channel
+            else:
+                thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得", message=thread_message)
             for message in messages:
-                create_time = message.created_at.astimezone(datetime.timezone(datetime.timedelta(hours=9)))
+                create_time = message.created_at.astimezone(JP)
                 create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
                 await thread.send(f"------------------------------\n"
                                   f"送信者：{message.author.display_name}\n"
@@ -139,6 +142,25 @@ class Message(commands.Cog):
             print("DM履歴が存在しませんでした。")
         # コマンドへのレスポンス
         await interaction.followup.send("DM履歴の取得が完了しました。")
+        # ログの保存
+        logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                    f"がコマンド「{interaction.command.name}」を使用しました。")
+
+    @app_commands.command(description="HelperのDM削除")
+    @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def delete_dm(self, interaction: discord.Interaction):
+        """DM削除"""
+        await interaction.response.defer(ephemeral=True)  # noqa
+        user = interaction.user
+        dm = await user.create_dm()
+        async for message in dm.history(limit=200):
+            if message.author == self.bot.user:
+                await message.delete()
+                # コマンドへのレスポンス
+        response_embed = discord.Embed(description="ℹ️ 完了しました", color=Color_OK)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
@@ -319,13 +341,7 @@ class Message(commands.Cog):
 
     async def cog_app_command_error(self, interaction, error):
         """コマンド実行時のエラー処理"""
-        # 指定ロールを保有していない場合
-        if isinstance(error, app_commands.CheckFailure):
-            error_embed = discord.Embed(description="⚠️ 権限がありません", color=Color_ERROR)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-            # ログの保存
-            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、権限不足により失敗しました。")
+        await discord_error(interaction.command.name, interaction, error, logger)
 
 
 class MsgTransferDropdownView(ui.View):
@@ -523,10 +539,7 @@ class CreateEmbedForm(ui.Modal, title="Embedを作成"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「Embedフォーム_新規作成」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 class AddEmbedFieldForm(ui.Modal, title="フィールドを追加"):
@@ -580,10 +593,7 @@ class AddEmbedFieldForm(ui.Modal, title="フィールドを追加"):
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
-        error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
-        await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
-        # ログの保存
-        logger.info(f"フォーム「Embedフォーム_フィールド追加」でエラーが発生しました。\nエラー内容：{error}")
+        await discord_error(self.title, interaction, error, logger)
 
 
 async def setup(bot):
