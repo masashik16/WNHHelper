@@ -58,21 +58,21 @@ class Moderation(commands.Cog):
         self.report_user_menu.error(self.cog_app_command_error)
 
         self.delete_message_menu = app_commands.ContextMenu(
-            name="メッセージを削除（管理者用）",
+            name="メッセージを削除",
             callback=self.delete_message,
         )
         self.bot.tree.add_command(self.delete_message_menu)
         self.delete_message_menu.error(self.cog_app_command_error)
 
         self.warn_user_menu = app_commands.ContextMenu(
-            name="ユーザーを警告（管理者用）",
+            name="ユーザーを警告",
             callback=self.warn_user,
         )
         self.bot.tree.add_command(self.warn_user_menu)
         self.warn_user_menu.error(self.cog_app_command_error)
 
         self.warn_profile_menu = app_commands.ContextMenu(
-            name="不適切なプロフィールの変更指示（管理者用）",
+            name="不適切なプロフィールの変更指示",
             callback=self.warn_profile,
         )
         self.bot.tree.add_command(self.warn_profile_menu)

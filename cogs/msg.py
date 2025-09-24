@@ -38,7 +38,7 @@ class Message(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.transfer_message_menu = app_commands.ContextMenu(
-            name="メッセージをBOTとして転送（管理者用）",
+            name="メッセージをBOTとして転送",
             callback=self.transfer_message,
         )
         self.bot.tree.add_command(self.transfer_message_menu)
