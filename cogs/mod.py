@@ -25,6 +25,8 @@ CHANNEL_ID_MOD_CASE = int(os.environ.get("CHANNEL_ID_MOD_CASE"))
 CHANNEL_ID_RULE = int(os.environ.get("CHANNEL_ID_RULE"))
 CHANNEL_ID_MOD_LOG = int(os.environ.get("CHANNEL_ID_MOD_LOG"))
 CHANNEL_ID_REPORT_LOG = int(os.environ.get("CHANNEL_ID_REPORT_LOG"))
+CHANNEL_ID_MOD_CONTACT_LOG = int(os.environ.get("CHANNEL_ID_MOD_CONTACT_LOG"))
+ENV = os.environ.get("ENV")
 Color_OK = 0x00ff00
 Color_WARN = 0xffa500
 Color_ERROR = 0xff0000
@@ -61,6 +63,13 @@ class Moderation(commands.Cog):
         )
         self.bot.tree.add_command(self.delete_message_menu)
         self.delete_message_menu.error(self.cog_app_command_error)
+
+        self.warn_user_menu = app_commands.ContextMenu(
+            name="ユーザーを警告（管理者用）",
+            callback=self.warn_user,
+        )
+        self.bot.tree.add_command(self.warn_user_menu)
+        self.warn_user_menu.error(self.cog_app_command_error)
 
         self.warn_profile_menu = app_commands.ContextMenu(
             name="不適切なプロフィールの変更指示（管理者用）",
@@ -489,162 +498,20 @@ class Moderation(commands.Cog):
                             f"に警告（{point}ポイント）を発行しました。")
             # 5ポイント以上のためBAN
             elif new_point >= 5:
-                await self.auto_ban(interaction=interaction, base_case_id=case_id, user=user,
-                                    base_thread_id=log.thread.id)  # noqa
+                await auto_ban(interaction=interaction, base_case_id=case_id, member=user,  # noqa
+                               base_thread_id=log.thread.id)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、ユーザー：{user.display_name}（UID：{user.id}）"
                             f"に警告（{point}ポイント）を発行しました。")
             # 2～4ポイントのため一定期間発言禁止
             else:
-                await self.auto_timeout(interaction=interaction, base_case_id=case_id, user=user, point=new_point,
-                                        base_thread_id=log.thread.id)  # noqa
+                await auto_timeout(interaction=interaction, base_case_id=case_id, member=user, point=new_point,
+                                   base_thread_id=log.thread.id)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                             f"がコマンド「{interaction.command.name}」を使用し、ユーザー：{user.display_name}（UID：{user.id}）"
                             f"に警告（{point}ポイント）を発行しました。")
-
-    async def auto_timeout(self, interaction: discord.Interaction, base_case_id: int, user: discord.User, point: int,
-                           base_thread_id: int):
-        """一定ポイント到達時の自動発言禁止処理"""
-        # ポイントに応じて期間を設定
-        if point == 2:
-            length = 7
-        elif point == 3:
-            length = 14
-        else:
-            length = 28
-        # ギルドとチャンネルの取得
-        guild = self.bot.get_guild(GUILD_ID)
-        channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
-        channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
-        # 違反ユーザー情報を取得
-        member = guild.get_member(user.id)
-        if member is not None:
-            # 実行日時を記録
-            dt = datetime.now(JP)
-            action_datetime = dt.strftime("%Y/%m/%d %H:%M")
-            # DBへケース情報を保存
-            case_id = await db.save_modlog(moderate_type=3, user_id=user.id, moderator_id=self.bot.user.id,
-                                           length=length,
-                                           reason=f"{base_case_id}に基づく自動処理", datetime=action_datetime, point=0)
-            # 処分通達メッセージを作成
-            dm_embed = discord.Embed(title="発言禁止処分の通知",
-                                     description=f"WNH運営チームです。あなたは次の期間発言禁止となりました。"
-                                     )
-            dm_embed.add_field(name="ケース番号",
-                               value=f"{case_id}", inline=False)
-            dm_embed.add_field(name="期間",
-                               value=f"{length}日", inline=False)
-            dm_embed.add_field(name="この処分に対する質問・申立",
-                               value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
-                               inline=False)
-            # 記録CHへケース情報を送信
-            log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                       content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"  # noqa
-                                                               f"\n処罰種類：発言禁止\n期間：{length}日"  # noqa
-                                                               f"\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
-                                                               f"\n元ケース：<#{base_thread_id}>")  # noqa
-            # ログCHへ送信するケース情報（Embed）を作成
-            log_embed = discord.Embed(title=f"ケース{case_id} | 発言禁止 | {user.name}")
-            log_embed.add_field(name="ユーザー",
-                                value=user.mention)
-            log_embed.add_field(name="モデレーター",
-                                value=f"<@{self.bot.user.id}>")
-            log_embed.add_field(name="期間",
-                                value=f"{length}日", inline=False)
-            log_embed.add_field(name="処罰理由",
-                                value=f"ケース{base_case_id}に基づく自動処理", inline=False)
-            log_embed.add_field(name="記録へのリンク",
-                                value=f"<#{log.thread.id}>", inline=False)  # noqa
-            log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
-            # ログCHへケース情報を送信
-            await channel_mod_log.send(embed=log_embed)
-            # DBへケースIDと記録スレッドIDを保存
-            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
-            # 違反ユーザーのDMへ通達を送信
-            try:
-                await user.send(embed=dm_embed)
-            except discord.Forbidden:
-                channel = await guild.fetch_channel(CHANNEL_ID_RULE)
-                thread = await channel.create_thread(name=f"ケース{case_id} | 発言禁止", reason=f"ケース{case_id} ",
-                                                     invitable=False)
-                await thread.edit(locked=True)
-                await thread.send(user.mention)
-                await thread.send(embed=dm_embed)
-            # 発言禁止処理
-            await member.timeout(timedelta(days=length), reason=f"ケース{case_id}")
-            # コマンドへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=Color_OK)
-            await interaction.followup.send(embed=response_embed)
-            # ログの保存
-            logger.info(
-                f"ユーザー：{user.display_name}（UID：{user.id}）のポイントが{point}ポイントに達したため{length}日間の発言禁止処理が行われました。")
-        # ユーザー情報を取得できなかった場合
-        else:
-            response_embed = discord.Embed(
-                description="ℹ️ 警告を発行しました。\n⚠️ ユーザーがサーバーに存在しないため発言禁止処理はスキップされました。",
-                color=Color_OK)
-            await interaction.followup.send(embed=response_embed)
-            pass
-
-    async def auto_ban(self, interaction: discord.Interaction, base_case_id: int, user: discord.User,
-                       base_thread_id: int):
-        """5ポイント到達時の自動BAN処理"""
-        # ギルドとチャンネルの取得
-        guild = self.bot.get_guild(GUILD_ID)
-        channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
-        channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
-        # 実行日時を記録
-        dt = datetime.now(JP)
-        action_datetime = dt.strftime("%Y/%m/%d %H:%M")
-        # DBへケース情報を保存
-        case_id = await db.save_modlog(moderate_type=4, user_id=user.id, moderator_id=self.bot.user.id, length="",
-                                       reason=f"{base_case_id}に基づく自動処理", datetime=action_datetime, point=0)
-        # 処分通達メッセージを作成
-        dm_embed = discord.Embed(title="BAN処分の通知",
-                                 description=f"WNH運営チームです。あなたはBANとなりました。"
-                                 )
-        dm_embed.add_field(name="ケース番号",
-                           value=f"{case_id}", inline=False)
-        dm_embed.add_field(name="この処分に対する質問・申立",
-                           value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
-                           inline=False)
-        # 記録CHへケース情報を送信
-        log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
-                                                   content=f"ユーザー情報：{user.mention}\nモデレーター：<@{self.bot.user.id}>"  # noqa
-                                                           f"\n処罰種類：BAN\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
-                                                           f"\n元ケース：<#{base_thread_id}>")
-        # ログCHへ送信するケース情報（Embed）を作成
-        log_embed = discord.Embed(title=f"ケース{case_id} | BAN | {user.name}")
-        log_embed.add_field(name="ユーザー",
-                            value=user.mention)
-        log_embed.add_field(name="モデレーター",
-                            value=f"<@{self.bot.user.id}>")
-        log_embed.add_field(name="処罰理由",
-                            value=f"ケース{base_case_id}に基づく自動処理", inline=False)
-        log_embed.add_field(name="記録へのリンク",
-                            value=f"<#{log.thread.id}>", inline=False)  # noqa
-        log_embed.set_footer(text=f"UID：{user.id}・{action_datetime}")
-        # ログCHへケース情報を送信
-        await channel_mod_log.send(embed=log_embed)
-        # DBへケースIDと記録スレッドIDを保存
-        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
-        # 違反ユーザーのDMへ通達を送信
-        member = guild.get_member(user.id)
-        if member is not None:
-            try:
-                await user.send(embed=dm_embed)
-            except discord.Forbidden:
-                pass
-        # ユーザーをBAN
-        await guild.ban(user=user, delete_message_days=0, reason=f"ケース{case_id}")
-        # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 警告を発行・BANしました", color=Color_OK)
-        await interaction.followup.send(embed=response_embed)
-        # ログの保存
-        logger.info(
-            f"ユーザー：{user.display_name}（UID：{user.id}）のポイントが5ポイントに達したためBAN処理が行われました。")
 
     @app_commands.command(description="対応実施通知の送信")
     @app_commands.checks.has_role(ROLE_ID_SENIOR_MOD)
@@ -914,6 +781,14 @@ class Moderation(commands.Cog):
         # 報告用フォームを表示
         await interaction.response.send_modal(WarnUserProfileForm(member=member))  # noqa
 
+    @app_commands.checks.has_role(ROLE_ID_SENIOR_MOD)
+    @app_commands.guilds(GUILD_ID)
+    @app_commands.guild_only()
+    async def warn_user(self, interaction: discord.Interaction, member: discord.Member):
+        """コンテキストメニューからのメッセージの報告"""
+        # 報告用フォームを表示
+        await interaction.response.send_modal(WarnUserForm(member=member))  # noqa
+
     @app_commands.checks.has_role(ROLE_ID_AUTHED)
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
@@ -1043,9 +918,12 @@ class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
                 reason_str = reason_str + f"、{reason}"
 
         # DBへケース情報を保存
-        case_id = 9999
-        # case_id = await db.save_modlog(moderate_type=11, user_id=user.id, moderator_id=interaction.user.id, length="",
-        #                                reason=reason_str, datetime=action_datetime, point=0)
+        if ENV == "prod":
+            case_id = await db.save_modlog(moderate_type=11, user_id=user.id, moderator_id=interaction.user.id,
+                                           length="",
+                                           reason=reason_str, datetime=action_datetime, point=0)
+        else:
+            case_id = 9999
         dm_embed = discord.Embed(title="メッセージ削除のお知らせ",
                                  description="WNH運営チームです。\nあなたが投稿した次のメッセージは以下の理由により削除されました。"
                                  )
@@ -1089,7 +967,7 @@ class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
         member = guild.get_member(user.id)
         if member is not None:
             try:
-                await user.send(embed=dm_embed)
+                await user.send(embed=dm_embed, view=ModContactButton())
                 for message in messages:
                     create_time = message.created_at.astimezone(JP)
                     create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
@@ -1226,6 +1104,243 @@ class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変�
         # # ログの保存
         # logger.info(
         #     f"スタッフ：{interaction.user}（UID：{interaction.user.id}）がメッセージ：{self.message.jump_url}を削除しました。")
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """エラー発生時の処理"""
+        await discord_error(self.title, interaction, error, logger)
+
+
+class WarnUserForm(ui.Modal, title="ユーザーに警告"):
+    """メッセージ報告フォームの実装"""
+
+    def __init__(self, member):
+        super().__init__()
+        self.member = member
+
+    # フォームの入力項目の定義（最大5個）
+
+    type_select = discord.ui.Label(
+        text="警告理由",
+        component=discord.ui.Select(
+            options=[
+                discord.SelectOption(label="複数回の違反"),
+                discord.SelectOption(label="重大な違反"),
+            ],
+            min_values=1,
+            max_values=2,
+        ),
+    )
+
+    point_select = discord.ui.Label(
+        text="ポイント",
+        component=discord.ui.Select(
+            options=[
+                discord.SelectOption(label="1"),
+                discord.SelectOption(label="2"),
+                discord.SelectOption(label="3"),
+                discord.SelectOption(label="4"),
+                discord.SelectOption(label="5"),
+            ],
+        ),
+    )
+
+    comment_input = ui.Label(
+        text="コメント",
+        component=ui.TextInput(
+            style=discord.TextStyle.long,  # noqa
+            max_length=3500,
+        ),
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        """フォーム送信時の処理"""
+        point = self.point_select.component.values[0]  # noqa
+        reason = self.type_select.component.values[0]  # noqa
+        comment = self.comment_input.component.value  # noqa
+        guild = interaction.guild
+        channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
+        channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
+        await interaction.response.defer(ephemeral=True)  # noqa
+        # ユーザーの保有ポイントを取得
+        if ENV == "prod":
+            old_point = await db.get_point(user_id=self.member.id)
+            if old_point is None:
+                new_point = int(point)
+            else:
+                new_point = old_point[0] + int(point)
+        else:
+            new_point = int(point)
+        # コマンド実行日時の取得
+        dt = datetime.now(JP)
+        action_datetime = dt.strftime("%Y/%m/%d %H:%M")
+        # DBへケース情報を保存
+        if ENV == "prod":
+            case_id = await db.save_modlog(moderate_type=2, user_id=self.member.id, moderator_id=interaction.user.id,
+                                           length="",
+                                           reason=reason, datetime=action_datetime, point=point)
+            # DBのポイントを更新
+            await db.save_point(user_id=self.member.id, point=new_point)
+        else:
+            case_id = 9999
+        # 警告メッセージの作成
+        dm_embed = discord.Embed(title="警告",
+                                 description="WNH運営チームです。あなたに対して下記の内容で警告が発行されました。"
+                                 )
+
+        dm_embed.add_field(name="ケース番号",
+                           value=f"{case_id}", inline=False)
+        dm_embed.add_field(name="警告理由",
+                           value=f"{reason}", inline=False)
+        dm_embed.add_field(name="コメント",
+                           value=f"{comment}", inline=False)
+        dm_embed.add_field(name="発行日時",
+                           value=f"{action_datetime}", inline=False)
+        dm_embed.add_field(name="この処罰に対する質問・申立",
+                           value=f"この処罰に対する質問・申立は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c"
+                                 f"\n\n尚、質問・申立の期限はこの警告を受けた日から3日以内とします。", inline=False)
+        # 記録CHへケース情報を送信
+        log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
+                                                   content=f"ユーザー情報：{self.member.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
+                                                           f"\n処罰種類：警告\n付与ポイント：{point}\n警告理由：{reason}\nコメント：{comment}")  # noqa
+        # ログCHへ送信するケース情報（Embed）を作成
+        log_embed = discord.Embed(title=f"ケース{case_id} | 警告 | {self.member.name}")
+        log_embed.add_field(name="ユーザー",
+                            value=self.member.mention)
+        log_embed.add_field(name="モデレーター",
+                            value=f"<@{interaction.user.id}>")
+        log_embed.add_field(name="付与ポイント",
+                            value=f"{point}", inline=False)
+        log_embed.add_field(name="警告理由",
+                            value=f"{reason}", inline=False)
+        log_embed.add_field(name="記録へのリンク",
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
+        log_embed.set_footer(text=f"UID：{self.member.id}・{action_datetime}")
+        if ENV == "prod":
+            # ログCHへケース情報を送信
+            await channel_mod_log.send(embed=log_embed)
+            # DBへケースIDと記録スレッドIDを保存
+            await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
+        if self.member in guild.members:
+            try:
+                await self.member.send(embed=dm_embed)
+            except discord.Forbidden:
+                channel = await guild.fetch_channel(CHANNEL_ID_RULE)
+                thread = await channel.create_thread(name=f"ケース{case_id} | 警告", reason=f"ケース{case_id} ",
+                                                     invitable=False)
+                await thread.edit(locked=True)
+                await thread.send(self.member.mention)
+                await thread.send(embed=dm_embed)
+        # コマンドへのレスポンス
+        if new_point == 1:
+            response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=Color_OK)
+            await interaction.followup.send(embed=response_embed)
+            # ログの保存
+            logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                        f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
+                        f"に警告（{point}ポイント）を発行しました。")
+        # 5ポイント以上のためBAN
+        elif new_point >= 5:
+            await auto_ban(interaction=interaction, base_case_id=case_id, member=self.member,
+                           base_thread_id=log.thread.id)  # noqa
+            # ログの保存
+            logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                        f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
+                        f"に警告（{point}ポイント）を発行しました。")
+        # 2～4ポイントのため一定期間発言禁止
+        else:
+            await auto_timeout(interaction=interaction, base_case_id=case_id, member=self.member, point=new_point,
+                               base_thread_id=log.thread.id)  # noqa
+            # ログの保存
+            logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                        f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
+                        f"に警告（{point}ポイント）を発行しました。")
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        """エラー発生時の処理"""
+        await discord_error(self.title, interaction, error, logger)
+
+
+class ModContactButton(ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @ui.button(label="意見・質問・申立を送信", style=discord.ButtonStyle.blurple, custom_id="mod_inquiry")  # noqa
+    async def mod_contact_button(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(  # noqa
+            ModContactForm(message=interaction.message, button=self.mod_contact_button, view=self))
+
+
+class ModContactForm(ui.Modal, title="ユーザーに警告"):
+    """メッセージ報告フォームの実装"""
+
+    def __init__(self, message, button, view):
+        super().__init__()
+        self.message = message
+        self.button = button
+        self.view = view
+        if message.embeds[0].title == "警告":
+            options = [
+                discord.SelectOption(label="ご意見"),
+                discord.SelectOption(label="質問"),
+                discord.SelectOption(label="申立"),
+            ]
+        else:
+            options = [
+                discord.SelectOption(label="ご意見"),
+                discord.SelectOption(label="質問"),
+            ]
+        type_select = discord.ui.Label(
+            text="種類",
+            description="ご意見のみの場合は回答を行っておりません。",
+            component=discord.ui.Select(
+                options=options,
+                min_values=1,
+                max_values=2,
+            ),
+        )
+        self.type_select = type_select
+        self.add_item(type_select)
+
+        comment_input = ui.Label(
+            text="内容",
+            component=ui.TextInput(
+                style=discord.TextStyle.long,  # noqa
+                max_length=3500,
+            ),
+        )
+        self.comment_input = comment_input
+        self.add_item(comment_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)  # noqa
+        guild = interaction.client.get_guild(GUILD_ID)
+        channel = guild.get_channel(CHANNEL_ID_MOD_CONTACT_LOG)
+        member = guild.get_member(interaction.user.id)
+        case_id = self.message.embeds[0].fields[0].value
+        create_time = self.message.created_at.astimezone(JP)
+        passed_time = datetime.now().astimezone(JP) - create_time
+        self.button.disabled = True
+        await self.message.edit(view=self.view)
+        if passed_time.days >= 3:
+            response_embed = discord.Embed(description=f"️⚠️ 処罰から3日以上経過しているため送信できません。",
+                                           color=Color_ERROR)
+            await interaction.followup.send(embed=response_embed, ephemeral=True)
+        else:
+            types = ""
+            for send_type in self.type_select.component.values:  # noqa
+                if types == "":
+                    types = send_type
+                else:
+                    types = types + f"、{send_type}"
+            embed = discord.Embed(title=f"処罰に対する意見・質問・申立", color=0x0000ff)
+            embed.add_field(name="1. ケース番号", value=case_id, inline=False)  # noqa
+            embed.add_field(name="2. 種別", value=types, inline=False)  # noqa
+            embed.add_field(name="3. 内容", value=self.comment_input.component.value, inline=False)  # noqa
+            embed.set_author(name=f"{member.display_name}", icon_url=f"{member.avatar.url}")
+            await channel.send(embed=embed)
+            response_embed = discord.Embed(description=f"ℹ️ 送信しました。",
+                                           color=Color_OK)
+            await interaction.followup.send(embed=response_embed, ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
@@ -1385,6 +1500,149 @@ class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
         await discord_error(self.title, interaction, error, logger)
+
+
+async def auto_timeout(interaction: discord.Interaction, base_case_id: int, member: discord.Member, point: int,
+                       base_thread_id: int):
+    """一定ポイント到達時の自動発言禁止処理"""
+    # ポイントに応じて期間を設定
+    if point == 2:
+        length = 7
+    elif point == 3:
+        length = 14
+    else:
+        length = 28
+    # ギルドとチャンネルの取得
+    guild = interaction.guild
+    channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
+    channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
+    # 違反ユーザー情報を取得
+    if member in guild.members:
+        # 実行日時を記録
+        dt = datetime.now(JP)
+        action_datetime = dt.strftime("%Y/%m/%d %H:%M")
+        # DBへケース情報を保存
+        case_id = await db.save_modlog(moderate_type=3, user_id=member.id, moderator_id=interaction.client.user.id,
+                                       length=length,
+                                       reason=f"{base_case_id}に基づく自動処理", datetime=action_datetime, point=0)
+        # 処分通達メッセージを作成
+        dm_embed = discord.Embed(title="発言禁止処分の通知",
+                                 description=f"WNH運営チームです。あなたは次の期間発言禁止となりました。"
+                                 )
+        dm_embed.add_field(name="ケース番号",
+                           value=f"{case_id}", inline=False)
+        dm_embed.add_field(name="期間",
+                           value=f"{length}日", inline=False)
+        dm_embed.add_field(name="この処分に対する質問・申立",
+                           value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
+                           inline=False)
+        # 記録CHへケース情報を送信
+        log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
+                                                   content=f"ユーザー情報：{member.mention}\nモデレーター：<@{interaction.client.user.id}>"  # noqa
+                                                           f"\n処罰種類：発言禁止\n期間：{length}日"  # noqa
+                                                           f"\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
+                                                           f"\n元ケース：<#{base_thread_id}>")  # noqa
+        # ログCHへ送信するケース情報（Embed）を作成
+        log_embed = discord.Embed(title=f"ケース{case_id} | 発言禁止 | {member.name}")
+        log_embed.add_field(name="ユーザー",
+                            value=member.mention)
+        log_embed.add_field(name="モデレーター",
+                            value=f"<@{interaction.client.user.id}>")
+        log_embed.add_field(name="期間",
+                            value=f"{length}日", inline=False)
+        log_embed.add_field(name="処罰理由",
+                            value=f"ケース{base_case_id}に基づく自動処理", inline=False)
+        log_embed.add_field(name="記録へのリンク",
+                            value=f"<#{log.thread.id}>", inline=False)  # noqa
+        log_embed.set_footer(text=f"UID：{member.id}・{action_datetime}")
+        # ログCHへケース情報を送信
+        await channel_mod_log.send(embed=log_embed)
+        # DBへケースIDと記録スレッドIDを保存
+        await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
+        # 違反ユーザーのDMへ通達を送信
+        try:
+            await member.send(embed=dm_embed)
+        except discord.Forbidden:
+            channel = await guild.fetch_channel(CHANNEL_ID_RULE)
+            thread = await channel.create_thread(name=f"ケース{case_id} | 発言禁止", reason=f"ケース{case_id} ",
+                                                 invitable=False)
+            await thread.edit(locked=True)
+            await thread.send(member.mention)
+            await thread.send(embed=dm_embed)
+        # 発言禁止処理
+        await member.timeout(timedelta(days=length), reason=f"ケース{case_id}")
+        # コマンドへのレスポンス
+        response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=Color_OK)
+        await interaction.followup.send(embed=response_embed)
+        # ログの保存
+        logger.info(
+            f"ユーザー：{member.display_name}（UID：{member.id}）のポイントが{point}ポイントに達したため{length}日間の発言禁止処理が行われました。")
+    # ユーザー情報を取得できなかった場合
+    else:
+        response_embed = discord.Embed(
+            description="ℹ️ 警告を発行しました。\n⚠️ ユーザーがサーバーに存在しないため発言禁止処理はスキップされました。",
+            color=Color_OK)
+        await interaction.followup.send(embed=response_embed)
+        pass
+
+
+async def auto_ban(interaction: discord.Interaction, base_case_id: int, member: discord.Member,
+                   base_thread_id: int):
+    """5ポイント到達時の自動BAN処理"""
+    # ギルドとチャンネルの取得
+    guild = interaction.guild
+    channel_mod_case = await guild.fetch_channel(CHANNEL_ID_MOD_CASE)
+    channel_mod_log = await guild.fetch_channel(CHANNEL_ID_MOD_LOG)
+    # 実行日時を記録
+    dt = datetime.now(JP)
+    action_datetime = dt.strftime("%Y/%m/%d %H:%M")
+    # DBへケース情報を保存
+    case_id = await db.save_modlog(moderate_type=4, user_id=member.id, moderator_id=interaction.client.user.id,
+                                   length="",
+                                   reason=f"{base_case_id}に基づく自動処理", datetime=action_datetime, point=0)
+    # 処分通達メッセージを作成
+    dm_embed = discord.Embed(title="BAN処分の通知",
+                             description=f"WNH運営チームです。あなたはBANとなりました。"
+                             )
+    dm_embed.add_field(name="ケース番号",
+                       value=f"{case_id}", inline=False)
+    dm_embed.add_field(name="この処分に対する質問・申立",
+                       value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
+                       inline=False)
+    # 記録CHへケース情報を送信
+    log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
+                                               content=f"ユーザー情報：{member.mention}\nモデレーター：<@{interaction.client.user.id}>"  # noqa
+                                                       f"\n処罰種類：BAN\n処罰理由：ケース{base_case_id}に基づく自動処理"  # noqa
+                                                       f"\n元ケース：<#{base_thread_id}>")
+    # ログCHへ送信するケース情報（Embed）を作成
+    log_embed = discord.Embed(title=f"ケース{case_id} | BAN | {member.name}")
+    log_embed.add_field(name="ユーザー",
+                        value=member.mention)
+    log_embed.add_field(name="モデレーター",
+                        value=f"<@{interaction.client.user.id}>")
+    log_embed.add_field(name="処罰理由",
+                        value=f"ケース{base_case_id}に基づく自動処理", inline=False)
+    log_embed.add_field(name="記録へのリンク",
+                        value=f"<#{log.thread.id}>", inline=False)  # noqa
+    log_embed.set_footer(text=f"UID：{member.id}・{action_datetime}")
+    # ログCHへケース情報を送信
+    await channel_mod_log.send(embed=log_embed)
+    # DBへケースIDと記録スレッドIDを保存
+    await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
+    # 違反ユーザーのDMへ通達を送信
+    if member in guild.members:
+        try:
+            await member.send(embed=dm_embed)
+        except discord.Forbidden:
+            pass
+    # ユーザーをBAN
+    await guild.ban(user=member, delete_message_days=0, reason=f"ケース{case_id}")
+    # コマンドへのレスポンス
+    response_embed = discord.Embed(description="ℹ️ 警告を発行・BANしました", color=Color_OK)
+    await interaction.followup.send(embed=response_embed)
+    # ログの保存
+    logger.info(
+        f"ユーザー：{member.display_name}（UID：{member.id}）のポイントが5ポイントに達したためBAN処理が行われました。")
 
 
 async def setup(bot):
