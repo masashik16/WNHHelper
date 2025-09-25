@@ -555,8 +555,7 @@ class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
         dm_embed.add_field(name="削除されたメッセージ",
                            value=f"削除されたメッセージの内容はこのメッセージの下に添付されます。", inline=False)
         dm_embed.add_field(name="この対応に対する質問・ご意見",
-                           value=f"この対応に対する質問・ご意見は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c",
-                           inline=False)
+                           value=f"この対応に対する質問・ご意見は下のボタンからのみ受け付けます。", inline=False)
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
                                                    content=f"ユーザー情報：{user.mention}\nモデレーター：<@{interaction.user.id}>\n"  # noqa
                                                            f"アクション種類：メッセージの削除\n削除理由：{reason_str}\n"
@@ -599,7 +598,7 @@ class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
                                                      invitable=False)
                 await thread.edit(locked=True)
                 await thread.send(user.mention)
-                await thread.send(embed=dm_embed)
+                await thread.send(embed=dm_embed, view=ModContactButton())
                 for message in messages:
                     create_time = message.created_at.astimezone(JP)
                     create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
@@ -685,8 +684,7 @@ class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変�
         dm_embed.add_field(name="発行日時",
                            value=f"{action_datetime}", inline=False)
         dm_embed.add_field(name="この対応に対する質問・ご意見",
-                           value=f"この対応に対する質問・ご意見は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c",
-                           inline=False)
+                           value=f"この対応に対する質問・ご意見は下のボタンからのみ受け付けます。", inline=False)
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
                                                    content=f"ユーザー情報：{self.member.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
                                                            f"\nアクション種類：不適切なプロフィールの変更指示\nプロフィールの種類：{profiles}\n\n"
@@ -711,7 +709,7 @@ class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変�
         if self.member in guild.members:
             await self.member.edit(roles=[role_wait_agree_rule], reason=f"ケース{case_id}による")
         try:
-            await self.member.send(embed=dm_embed)
+            await self.member.send(embed=dm_embed, view=ModContactButton())
         except discord.Forbidden:
             channel = await guild.fetch_channel(CHANNEL_ID_RULE)
             thread = await channel.create_thread(name=f"ケース{case_id} | 不適切なプロフィールの変更指示",
@@ -719,13 +717,13 @@ class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変�
                                                  invitable=False)
             await thread.edit(locked=True)
             await thread.send(self.member.mention)
-            await thread.send(embed=dm_embed)
+            await thread.send(embed=dm_embed, view=ModContactButton())
         # フォームへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 変更指示を送信しました。", color=Color_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # # ログの保存
-        # logger.info(
-        #     f"スタッフ：{interaction.user}（UID：{interaction.user.id}）がメッセージ：{self.message.jump_url}を削除しました。")
+        logger.info(
+            f"スタッフ：{interaction.user}（UID：{interaction.user.id}）がユーザー：{self.member}（UID：{self.member.id}）にプロフィールの変更指示を送信しました。")
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         """エラー発生時の処理"""
@@ -817,9 +815,8 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
                            value=f"{comment}", inline=False)
         dm_embed.add_field(name="発行日時",
                            value=f"{action_datetime}", inline=False)
-        dm_embed.add_field(name="この処罰に対する質問・申立",
-                           value=f"この処罰に対する質問・申立は下記URLからのみ受け付けます。\nhttps://dyno.gg/form/6beb077c"
-                                 f"\n\n尚、質問・申立の期限はこの警告を受けた日から3日以内とします。", inline=False)
+        dm_embed.add_field(name="この対応に対する質問・ご意見・申立",
+                           value=f"この対応に対する質問・ご意見・申立は下のボタンからのみ受け付けます。", inline=False)
         # 記録CHへケース情報を送信
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
                                                    content=f"ユーザー情報：{self.member.mention}\nモデレーター：<@{interaction.user.id}>"  # noqa
@@ -844,14 +841,14 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
             await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
         if self.member in guild.members:
             try:
-                await self.member.send(embed=dm_embed)
+                await self.member.send(embed=dm_embed, view=ModContactButton())
             except discord.Forbidden:
                 channel = await guild.fetch_channel(CHANNEL_ID_RULE)
                 thread = await channel.create_thread(name=f"ケース{case_id} | 警告", reason=f"ケース{case_id} ",
                                                      invitable=False)
                 await thread.edit(locked=True)
                 await thread.send(self.member.mention)
-                await thread.send(embed=dm_embed)
+                await thread.send(embed=dm_embed, view=ModContactButton())
         # コマンドへのレスポンス
         if new_point == 1:
             response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=Color_OK)
