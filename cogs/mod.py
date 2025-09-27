@@ -852,7 +852,7 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
         # コマンドへのレスポンス
         if new_point == 1:
             response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=Color_OK)
-            await interaction.followup.send(embed=response_embed)
+            await interaction.followup.send(embed=response_embed, ephemeral=True)
             # ログの保存
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                         f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
