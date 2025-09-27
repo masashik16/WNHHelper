@@ -1153,7 +1153,7 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
         dm_embed.add_field(name="期間",
                            value=f"{length}日", inline=False)
         dm_embed.add_field(name="この処分に対する質問・申立",
-                           value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
+                           value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n意見・質問・申立はケース{base_case_id}に対して行ってください。",
                            inline=False)
         # 記録CHへケース情報を送信
         log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
@@ -1192,7 +1192,7 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
         await member.timeout(timedelta(days=length), reason=f"ケース{case_id}")
         # コマンドへのレスポンス
         response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=Color_OK)
-        await interaction.followup.send(embed=response_embed)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
             f"ユーザー：{member.display_name}（UID：{member.id}）のポイントが{point}ポイントに達したため{length}日間の発言禁止処理が行われました。")
@@ -1201,7 +1201,7 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
         response_embed = discord.Embed(
             description="ℹ️ 警告を発行しました。\n⚠️ ユーザーがサーバーに存在しないため発言禁止処理はスキップされました。",
             color=Color_OK)
-        await interaction.followup.send(embed=response_embed)
+        await interaction.followup.send(embed=response_embed, ephemeral=True)
         pass
 
 
@@ -1226,7 +1226,7 @@ async def auto_ban(interaction: discord.Interaction, base_case_id: int, member: 
     dm_embed.add_field(name="ケース番号",
                        value=f"{case_id}", inline=False)
     dm_embed.add_field(name="この処分に対する質問・申立",
-                       value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n質問・申立はケース{base_case_id}に対して行ってください。",
+                       value=f"この処分はケース{base_case_id}に基づき自動で行われています。\n意見・質問・申立はケース{base_case_id}に対して行ってください。",
                        inline=False)
     # 記録CHへケース情報を送信
     log = await channel_mod_case.create_thread(name=f"ケース{case_id}",
@@ -1258,7 +1258,7 @@ async def auto_ban(interaction: discord.Interaction, base_case_id: int, member: 
     await guild.ban(user=member, delete_message_days=0, reason=f"ケース{case_id}")
     # コマンドへのレスポンス
     response_embed = discord.Embed(description="ℹ️ 警告を発行・BANしました", color=Color_OK)
-    await interaction.followup.send(embed=response_embed)
+    await interaction.followup.send(embed=response_embed, ephemeral=True)
     # ログの保存
     logger.info(
         f"ユーザー：{member.display_name}（UID：{member.id}）のポイントが5ポイントに達したためBAN処理が行われました。")
