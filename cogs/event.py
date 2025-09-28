@@ -16,9 +16,9 @@ ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 THREAD_ID_EVENT1 = int(os.environ.get("THREAD_ID_EVENT1"))
 THREAD_ID_EVENT2 = int(os.environ.get("THREAD_ID_EVENT2"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("event")
 
 """Event1の設定"""
@@ -60,7 +60,7 @@ class Event(commands.Cog):
     # async def set_thread(self, interaction: discord.Interaction, event: str):
     #     if not interaction.channel.type == discord.ChannelType.public_thread:
     #         # コマンドへのレスポンス
-    #         error_embed = discord.Embed(description="⚠️ スレッド内で実行してください。", color=Color_ERROR)
+    #         error_embed = discord.Embed(description="⚠️ スレッド内で実行してください。", color=COLOR_ERROR)
     #         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     #         return
     #     dotenv_file = dotenv.find_dotenv()
@@ -69,14 +69,14 @@ class Event(commands.Cog):
     #     else:
     #         dotenv.set_key(dotenv_file, "THREAD_ID_EVENT2", str(interaction.channel.id))
     #     # コマンドへのレスポンス
-    #     response_embed = discord.Embed(description=f"ℹ️ {event}の送信先をこのスレッドに設定しました。", color=Color_OK)
+    #     response_embed = discord.Embed(description=f"ℹ️ {event}の送信先をこのスレッドに設定しました。", color=COLOR_OK)
     #     await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
     #     # ログの保存
     #     logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
     #                 f"がコマンド「{interaction.command.name}」を使用しました。")
 
     async def create_message(self, interaction: discord.Interaction, event: str):
-        """イベント応募フォームの作成"""
+        """イベントボタンの送信"""
         if event == "event1":
             # ボタンを含むビューを作成
             view = Event1Button()
@@ -90,7 +90,7 @@ class Event(commands.Cog):
             channel = interaction.channel
             await channel.send(view=view)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -102,7 +102,7 @@ class Event(commands.Cog):
 
 
 class Event1Button(ui.View):
-    """ボタンの実装"""
+    """Event1用の一連のボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
@@ -130,6 +130,10 @@ class Event1Button(ui.View):
 
 
 async def event1_cancel_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """event1の申込キャンセルボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     await interaction.response.defer(ephemeral=True)  # noqa
     # ギルドとスレッドの取得
     thread_event1 = interaction.guild.get_thread(THREAD_ID_EVENT1)
@@ -141,7 +145,7 @@ async def event1_cancel_button_callback(interaction: discord.Interaction, button
     # 申込情報が見つからない場合
     if entry_log is None:
         # ボタンへのレスポンス
-        embed1 = discord.Embed(description="⚠️ 申込情報が見つかりませんでした", color=Color_ERROR)
+        embed1 = discord.Embed(description="⚠️ 申込情報が見つかりませんでした", color=COLOR_ERROR)
         await interaction.followup.send(embed=embed1, ephemeral=True)
     # 申込情報の編集
     elif entry_log.embeds[0].to_dict()["title"] == "申込受付":
@@ -156,17 +160,18 @@ async def event1_cancel_button_callback(interaction: discord.Interaction, button
         # 申込情報をキャンセルに変更
         await entry_log.edit(embed=embed)
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ キャンセルを受け付けました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ キャンセルを受け付けました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
     # 申込が既にキャンセル済みの場合
     else:
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
+        response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=COLOR_ERROR)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 
 async def event1_admin_button_callback(interaction: discord.Interaction, button: ui.Button,
                                        event1_entry_button: ui.Button, event1_cancel_button: ui.Button, view: ui.View):
+    """event1用の一連のボタンの有効化・無効化"""
     wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
     if wnh_staff_role not in interaction.user.roles:
         raise discord.app_commands.CheckFailure
@@ -180,7 +185,7 @@ async def event1_admin_button_callback(interaction: discord.Interaction, button:
 
 
 class Event1Form(ui.Modal, title="イベント申込フォーム"):
-    """フォームの実装"""
+    """Event1の申込フォーム"""
 
     def __init__(self):
         super().__init__()
@@ -213,14 +218,14 @@ class Event1Form(ui.Modal, title="イベント申込フォーム"):
             # 申込情報の送信
             await thread_event1.send(content=f"<@{user_id}>", embed=entry_log_embed)
             # フォームへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 申込みを受け付けました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 申込みを受け付けました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
             # 既に申込済みの場合（既存申込の修正）
         else:
             # 申込情報編集
             await entry_log.edit(content=f"<@{user_id}>", embed=entry_log_embed)
             # フォームへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 申込みを修正しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 申込みを修正しました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -232,7 +237,7 @@ class Event1Form(ui.Modal, title="イベント申込フォーム"):
 
 
 class Event2Button(ui.View):
-    """ボタンの実装"""
+    """Event2用の一連のボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
@@ -260,6 +265,10 @@ class Event2Button(ui.View):
 
 
 async def event2_cancel_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """event2の申込キャンセルボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     await interaction.response.defer(ephemeral=True)  # noqa
     # ギルドとスレッドの取得
     thread_event2 = interaction.guild.get_thread(THREAD_ID_EVENT2)
@@ -271,7 +280,7 @@ async def event2_cancel_button_callback(interaction: discord.Interaction, button
     # 申込情報が見つからない場合
     if entry_log is None:
         # ボタンへのレスポンス
-        embed1 = discord.Embed(description="⚠️ 申込情報が見つかりませんでした", color=Color_ERROR)
+        embed1 = discord.Embed(description="⚠️ 申込情報が見つかりませんでした", color=COLOR_ERROR)
         await interaction.followup.send(embed=embed1, ephemeral=True)
     # 申込情報の編集
     elif entry_log.embeds[0].to_dict()["title"] == "申込受付":
@@ -286,17 +295,18 @@ async def event2_cancel_button_callback(interaction: discord.Interaction, button
         # 申込情報をキャンセルに変更
         await entry_log.edit(embed=embed)
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ キャンセルを受け付けました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ キャンセルを受け付けました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
     # 申込が既にキャンセル済みの場合
     else:
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=Color_ERROR)
+        response_embed = discord.Embed(description="⚠️ 既にキャンセルされています", color=COLOR_ERROR)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 
 async def event2_admin_button_callback(interaction: discord.Interaction, button: ui.Button,
                                        event2_entry_button: ui.Button, event2_cancel_button: ui.Button, view: ui.View):
+    """event2用の一連のボタンの有効化・無効化"""
     wnh_staff_role = interaction.guild.get_role(ROLE_ID_WNH_STAFF)
     if wnh_staff_role not in interaction.user.roles:
         raise discord.app_commands.CheckFailure
@@ -310,7 +320,7 @@ async def event2_admin_button_callback(interaction: discord.Interaction, button:
 
 
 class Event2Form(ui.Modal, title="イベント申込フォーム"):
-    """フォームの実装"""
+    """Event2の申込フォーム"""
 
     def __init__(self):
         super().__init__()
@@ -343,14 +353,14 @@ class Event2Form(ui.Modal, title="イベント申込フォーム"):
             # 申込情報の送信
             await thread_event2.send(content=f"<@{user_id}>", embed=entry_log_embed)
             # フォームへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 申込みを受け付けました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 申込みを受け付けました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
             # 既に申込済みの場合（既存申込の修正）
         else:
             # 申込情報編集
             await entry_log.edit(content=f"<@{user_id}>", embed=entry_log_embed)
             # フォームへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 申込みを修正しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 申込みを修正しました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"

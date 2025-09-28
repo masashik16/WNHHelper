@@ -121,6 +121,7 @@ else:
 
 @_app.before_request
 def before_request():
+    """禁止ネットワークからのアクセスか判定"""
     if request.headers.getlist("X-Forwarded-For"):
         remote_addr = request.headers.getlist("X-Forwarded-For")[0]
         remote_addr = ipaddress.ip_address(remote_addr)

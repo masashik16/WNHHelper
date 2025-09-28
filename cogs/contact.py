@@ -41,9 +41,9 @@ CLAN_STAFF_ROLE = int(os.environ.get("CLAN_STAFF_ROLE"))
 CLAN_MEET_ID = int(os.environ.get("CLAN_MEET_ID"))
 
 ENV = os.environ.get("ENV")
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("contact")
 COOLDOWN = commands.CooldownMapping.from_cooldown(1, 5, commands.BucketType.member)  # noqa
 DICT_CATEGORY = {GENERAL_INQUIRY_OPEN: "INQUIRY",
@@ -68,12 +68,12 @@ class Contact(commands.Cog):
         self.bot = bot
 
     async def create_message(self, interaction: discord.Interaction):
-        """認証用メッセージを作成"""
+        """問い合わせ用メッセージを送信"""
         channel = interaction.channel
 
         await channel.send(view=CreateTicketView(), allowed_mentions=DISALLOW_MENTION)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -85,10 +85,11 @@ class Contact(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def ticket_close_normal(self, interaction: discord.Interaction):
+        """チケットクローズガイダンスの送信"""
         await interaction.channel.send("追加する情報がなければ、チケットを閉じて下さい。"
                                        "\nよろしくお願いいたします。"
                                        "\n\nWNH 運営チーム")
-        response_embed = discord.Embed(description="ℹ️ 完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
 
     @app_commands.command(description="チケットクローズ案内_24h無反応")
@@ -96,9 +97,10 @@ class Contact(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def ticket_close_24h(self, interaction: discord.Interaction):
+        """24h応答がなかった場合のクローズメッセージの送信"""
         await interaction.channel.send("運営チームの最後の対応から24時間反応がなかったためチケットをクローズします。"
                                        "\n\nWNH 運営チーム")
-        response_embed = discord.Embed(description="ℹ️ 完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
 
     async def cog_app_command_error(self, interaction, error):
@@ -107,6 +109,7 @@ class Contact(commands.Cog):
 
 
 class CreateTicketView(ui.LayoutView):
+    """問い合わせ用メッセージ"""
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -158,11 +161,13 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
         retry_after = None
     if retry_after:
         error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+    # 種類がご意見・ご要望の場合
     elif select_value == "OPINION":
         await interaction.response.send_modal(InquiryForm())  # noqa
         await interaction.message.edit(view=CreateTicketView())
+    # 種類がご意見・ご要望以外の場合
     else:
         await interaction.response.defer()  # noqa
         # ドロップダウンの選択項目を初期化
@@ -170,13 +175,14 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
         # 選択されたカテゴリのカテゴリチャンネルの取得
         open_category = interaction.guild.get_channel(DICT_OPEN_CATEGORY[select_value])
         close_category = interaction.guild.get_channel(DICT_CLOSE_CATEGORY[select_value])
-        # DBからチケット番号を取得
+        # DBからチケット番号を取得（本番環境の場合）
         if ENV == "prod":
             channel_number_db = await get_inquiry_number(select_value)
         else:
             channel_number_db = 1
         channel_number = f"{channel_number_db:04}"
         user = interaction.user
+        # 問い合わせ種類に応じてチケット初期メッセージを作成
         if select_value == "INQUIRY":
             view = GeneralTicketView(user)
         elif select_value == "REPORT":
@@ -195,7 +201,7 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
         if interaction.user.id in users:
             error_embed = discord.Embed(
                 description="⚠️ 作成しようとしたカテゴリのチケットが既にあります。\nチケットは1カテゴリにつき同時に1つまでしか作成できません。",
-                color=Color_ERROR)
+                color=COLOR_ERROR)
             await interaction.followup.send(embed=error_embed, ephemeral=True)  # noqa
         else:
             # チャンネルの作成
@@ -212,7 +218,7 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
             await ticket.send(view=view)
             # ログの送信
             category_name = DICT_NAME[select_value]
-            embed = discord.Embed(colour=Color_OK)
+            embed = discord.Embed(colour=COLOR_OK)
             embed.add_field(name="情報", value=f"チケット：{ticket.name}"
                                                f"\n内容：チケット作成")
             embed.add_field(name="カテゴリ", value=f"{category_name}")
@@ -225,6 +231,7 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
 
 
 class OpinionView(ui.LayoutView):
+    """ご意見・ご要望の運営チームへの送信用メッセージ"""
     def __init__(self, user, content) -> None:
         super().__init__(timeout=None)
 
@@ -238,7 +245,7 @@ class OpinionView(ui.LayoutView):
 
 
 class InquiryForm(ui.Modal, title="ご意見・ご要望"):
-    """フォームの実装"""
+    """ご意見・ご要望フォーム"""
 
     def __init__(self):
         """ギルド、ロール、チャンネルの事前定義"""
@@ -269,7 +276,7 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
         thread = await message.create_thread(name=f"議論用")
         # フォームへのレスポンス
         response_embed = discord.Embed(description=f"ℹ️ ご意見・ご要望を受け付けました。",
-                                       color=Color_OK)
+                                       color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # DBに保存
         # ログの保存
@@ -282,6 +289,7 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
 
 
 class ClanButton(ui.ActionRow):
+    """クランリクルーター問い合わせのチケット初期メッセージに付属するボタン"""
     def __init__(self) -> None:
         super().__init__()
 
@@ -297,7 +305,7 @@ class ClanButton(ui.ActionRow):
         retry_after = bucket.update_rate_limit()
         if retry_after:
             error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                        color=Color_ERROR)
+                                        color=COLOR_ERROR)
             await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
         else:
             button.disabled = True
@@ -305,6 +313,7 @@ class ClanButton(ui.ActionRow):
 
 
 class ClanTicketView(ui.LayoutView):
+    """クランリクルーター問い合わせのチケット初期メッセージ"""
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -336,6 +345,7 @@ class ClanTicketView(ui.LayoutView):
 
 
 class CloseButton(ui.ActionRow):
+    """クランリクルーター問い合わせ以外のチケット初期メッセージに付属するボタン"""
     def __init__(self) -> None:
         super().__init__()
 
@@ -345,6 +355,7 @@ class CloseButton(ui.ActionRow):
 
 
 class GeneralTicketView(ui.LayoutView):
+    """一般的な問い合わせのチケット初期メッセージ"""
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -365,6 +376,7 @@ class GeneralTicketView(ui.LayoutView):
 
 
 class ReportTicketView(ui.LayoutView):
+    """通報のチケット初期メッセージ"""
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -388,24 +400,33 @@ class ReportTicketView(ui.LayoutView):
 
 
 async def ticket_close_button_callback(interaction: discord.Interaction):
+    """チケットクローズボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # クールタイムの判定
     bucket = COOLDOWN.get_bucket(interaction.message)
     if ENV == "prod":
         retry_after = bucket.update_rate_limit()
     else:
         retry_after = None
+    # カテゴリの取得
     category = DICT_CATEGORY[interaction.channel.category_id]
     to_move = DICT_CLOSE_CATEGORY[category]
+    # CT中の場合
     if retry_after:
         error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+    # チケットが既にクローズされている場合
     elif interaction.channel.category_id == to_move:
         error_embed = discord.Embed(description=f"⚠️ チケットは既にクローズされています。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     else:
+        # 応答時間の延長
         await interaction.response.defer()  # noqa
-        # 権限の更新
+        # チャンネル権限の更新
         overwrite_dict = interaction.channel.overwrites
         overwrite_member = list(overwrite_dict)
         overwrite = discord.PermissionOverwrite()
@@ -415,7 +436,7 @@ async def ticket_close_button_callback(interaction: discord.Interaction):
             obj_type = type(member)
             if obj_type == discord.Member:
                 await interaction.channel.set_permissions(member, overwrite=overwrite)
-
+        # カテゴリの移動
         category_ch = interaction.guild.get_channel(to_move)
         offset = int(interaction.channel.name[-4:])
         if offset == 1:
@@ -425,7 +446,7 @@ async def ticket_close_button_callback(interaction: discord.Interaction):
             await interaction.channel.move(beginning=True, offset=offset, category=category_ch)
         # ログの送信
         category_name = DICT_NAME[category]
-        embed = discord.Embed(colour=Color_WARN)
+        embed = discord.Embed(colour=COLOR_WARN)
         embed.add_field(name="情報", value=f"チケット：{interaction.channel.name}"
                                            f"\n内容：チケット閉")
         embed.add_field(name="カテゴリ", value=f"{category_name}")
@@ -434,14 +455,14 @@ async def ticket_close_button_callback(interaction: discord.Interaction):
         await channel.send(embed=embed)
         # 通知の送信
         embed = discord.Embed(title="", description=f"{interaction.user.mention}がチケットを閉じました。",
-                              colour=Color_WARN)
+                              colour=COLOR_WARN)
         await interaction.channel.send(embed=embed)  # noqa
-        # ツールの送信
+        # ツールメッセージの送信
         await interaction.channel.send(view=ToolButtonView())  # noqa
 
 
 class ToolButtonView(ui.LayoutView):
-    """ボタンの実装"""
+    """ツールメッセージ"""
 
     def __init__(self):
         super().__init__(timeout=None)
@@ -474,18 +495,25 @@ class ToolButtonView(ui.LayoutView):
 
 
 async def ticket_open_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """チケット再開ボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # クールタイムの判定
     bucket = COOLDOWN.get_bucket(interaction.message)
     if ENV == "prod":
         retry_after = bucket.update_rate_limit()
     else:
         retry_after = None
+    # CT中の場合
     if retry_after:
         error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     else:
+        # 応答時間の延長
         await interaction.response.defer()  # noqa
-        # 権限の更新
+        # チャンネル権限の更新
         overwrite_dict = interaction.channel.overwrites
         overwrite_member = list(overwrite_dict)
         overwrite = discord.PermissionOverwrite()
@@ -495,6 +523,7 @@ async def ticket_open_button_callback(interaction: discord.Interaction, button: 
             obj_type = type(member)
             if obj_type == discord.Member:
                 await interaction.channel.set_permissions(member, overwrite=overwrite)
+        # カテゴリの移動
         category = DICT_CATEGORY[interaction.channel.category_id]
         to_move = DICT_OPEN_CATEGORY[category]
         category_ch = interaction.guild.get_channel(to_move)
@@ -506,7 +535,7 @@ async def ticket_open_button_callback(interaction: discord.Interaction, button: 
             await interaction.channel.move(beginning=True, offset=offset, category=category_ch)
         # ログの送信
         category_name = DICT_NAME[category]
-        embed = discord.Embed(colour=Color_OK)
+        embed = discord.Embed(colour=COLOR_OK)
         embed.add_field(name="情報", value=f"チケット：{interaction.channel.name}"
                                            f"\n内容：チケット再開")
         embed.add_field(name="カテゴリ", value=f"{category_name}")
@@ -515,25 +544,34 @@ async def ticket_open_button_callback(interaction: discord.Interaction, button: 
         await channel.send(embed=embed)
         # 通知の送信
         embed = discord.Embed(title="", description=f"{interaction.user.mention}がチケットを再開しました。",
-                              colour=Color_OK)
+                              colour=COLOR_OK)
         await interaction.channel.send(embed=embed)  # noqa
+        # ツールメッセージの削除
         await interaction.message.delete()
 
 
 async def ticket_save_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """チケット保存ボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # クールタイムの判定
     bucket = COOLDOWN.get_bucket(interaction.message)
     if ENV == "prod":
         retry_after = bucket.update_rate_limit()
     else:
         retry_after = None
+    # CT中の場合
     if retry_after:
         error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+    # スタッフ以外が押した場合
     elif interaction.user.get_role(ROLE_ID_WNH_STAFF) is None:
-        error_embed = discord.Embed(description="⚠️ この機能はWNH STAFF専用です。", color=Color_ERROR)
+        error_embed = discord.Embed(description="⚠️ この機能はWNH STAFF専用です。", color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     else:
+        # 応答時間の延長
         await interaction.response.defer()  # noqa
         # HTMLを作成
         transcript = await chat_exporter.export(
@@ -556,7 +594,7 @@ async def ticket_save_button_callback(interaction: discord.Interaction, button: 
                                    interaction.channel.history(limit=1, oldest_first=True)]
         first_user_message = first_user_message_list[0].components[0].content
         user = await interaction.client.fetch_user(int(first_user_message[2:-1]))
-        embed = discord.Embed(colour=Color_OK)
+        embed = discord.Embed(colour=COLOR_OK)
         embed.add_field(name="チケット所有者", value=f"{user.mention}")
         embed.add_field(name="チケット", value=f"{interaction.channel.name}")
         embed.add_field(name="カテゴリ", value=f"{category_name}")
@@ -565,27 +603,34 @@ async def ticket_save_button_callback(interaction: discord.Interaction, button: 
         await channel.send(embed=embed, file=transcript_file)
         # 通知の送信
         embed = discord.Embed(title="", description=f"チケットを保存しました。",
-                              colour=Color_OK)
+                              colour=COLOR_OK)
         await interaction.channel.send(embed=embed)  # noqa
 
 async def ticket_delete_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """チケット削除ボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # クールタイムの判定
     bucket = COOLDOWN.get_bucket(interaction.message)
     if ENV == "prod":
         retry_after = bucket.update_rate_limit()
     else:
         retry_after = None
+    # CT中の場合
     if retry_after:
         error_embed = discord.Embed(description=f"⚠️ {int(retry_after) + 1}秒後に再度お試しください。",
-                                    color=Color_ERROR)
+                                    color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+    # スタッフ以外が押した場合
     elif interaction.user.get_role(ROLE_ID_WNH_STAFF) is None:
-        error_embed = discord.Embed(description="⚠️ この機能はWNH STAFF専用です。", color=Color_ERROR)
+        error_embed = discord.Embed(description="⚠️ この機能はWNH STAFF専用です。", color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     else:
         # ログの送信
         category = DICT_CATEGORY[interaction.channel.category_id]
         category_name = DICT_NAME[category]
-        embed = discord.Embed(colour=Color_ERROR)
+        embed = discord.Embed(colour=COLOR_ERROR)
         embed.add_field(name="情報", value=f"チケット：{interaction.channel.name}"
                                            f"\n内容：チケット削除")
         embed.add_field(name="カテゴリ", value=f"{category_name}")
@@ -595,14 +640,15 @@ async def ticket_delete_button_callback(interaction: discord.Interaction, button
         # 通知の送信
         await interaction.response.defer()  # noqa
         embed = discord.Embed(title="", description=f"チケットはまもなく削除されます。",
-                              colour=Color_ERROR)
+                              colour=COLOR_ERROR)
         await interaction.channel.send(embed=embed)  # noqa
+        # チケットの削除
         time.sleep(3)
         await interaction.channel.delete()
     
     
 class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
-    """フォームの実装"""
+    """リクルーター面談日時申請フォーム"""
 
     def __init__(self, view):
         super().__init__()
@@ -655,6 +701,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
 
     async def on_submit(self, interaction: discord.Interaction):
         """フォーム送信時の処理"""
+        # 応答時間の延長
         await interaction.response.defer()  # noqa
         # 担当者に送信
         embed = discord.Embed(title=f"クラン{self.clan_tag.component.value}　面談希望日時")  # noqa
@@ -668,7 +715,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
         await interaction.message.edit(view=self.view)
         response_embed = discord.Embed(
             description=f"面談希望日時を送信しました。\n担当者より折り返しご連絡しますのでチケットはこのままでお待ちください。",
-            color=Color_OK)
+            color=COLOR_OK)
         await interaction.channel.send(embed=response_embed)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:

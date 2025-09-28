@@ -296,7 +296,7 @@ async def get_question_log():
 
 
 async def get_inquiry_number(category: str):
-    """ポイントを取得（モデレーション）"""
+    """問い合わせチケット番号の取得と更新"""
     db_connect = await aiomysql.connect(host=DB_HOST, port=DB_PORT,
                                         user=DB_USER, password=DB_PASS,
                                         db=DB_NAME)
@@ -312,17 +312,3 @@ async def get_inquiry_number(category: str):
     return new_number
 
 
-async def db_test():
-    """ユーザーを取得（認証系）"""
-    db_connect = await aiomysql.connect(host=DB_HOST, port=DB_PORT,
-                                        user=DB_USER, password=DB_PASS,
-                                        db=DB_NAME)
-    db_cur = await db_connect.cursor()
-    await db_cur.execute("SELECT * FROM user_info")
-    result = await db_cur.fetchall()
-    await db_cur.close()
-    db_connect.close()
-    if result is None:
-        return "ERROR"
-    else:
-        return result
