@@ -27,9 +27,9 @@ CHANNEL_ID_MOD_LOG = int(os.environ.get("CHANNEL_ID_MOD_LOG"))
 CHANNEL_ID_REPORT_LOG = int(os.environ.get("CHANNEL_ID_REPORT_LOG"))
 CHANNEL_ID_MOD_CONTACT_LOG = int(os.environ.get("CHANNEL_ID_MOD_CONTACT_LOG"))
 ENV = os.environ.get("ENV")
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("mod")
 JP = pytz.timezone("Asia/Tokyo")
 
@@ -94,7 +94,7 @@ class Moderation(commands.Cog):
         mod_case = await db.get_modlog_single(case_id)
         # ケースが存在しない場合
         if not mod_case:
-            embed = discord.Embed(description="⚠️ データがありません", color=Color_ERROR)
+            embed = discord.Embed(description="⚠️ データがありません", color=COLOR_ERROR)
             await interaction.response.send_message(embed=embed, ephemeral=True)  # noqa
         # ケースが存在する場合
         else:
@@ -176,10 +176,11 @@ class Moderation(commands.Cog):
         embed = discord.Embed(title=f"{username}に対するモデレーション記録 | 累積ポイント：{point}")
         # ケースが存在しない場合
         if not mod_case:
-            response_embed = discord.Embed(description="⚠️ データがありません", color=Color_ERROR)
+            response_embed = discord.Embed(description="⚠️ データがありません", color=COLOR_ERROR)
             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ケースが存在する場合
         else:
+            # 応答時間の延長
             await interaction.response.defer(ephemeral=True)  # noqa
             # 複数のケースを1メッセージへ
             for case in mod_case:
@@ -257,7 +258,7 @@ class Moderation(commands.Cog):
         mod_case = await db.get_modlog_single(old_case_id)
         # ケースが存在しない場合
         if not mod_case:
-            embed = discord.Embed(description="⚠️ データがありません", color=Color_ERROR)
+            embed = discord.Embed(description="⚠️ データがありません", color=COLOR_ERROR)
             await interaction.response.send_message(embed=embed, ephemeral=True)  # noqa
         # ケースが存在する場合
         else:
@@ -265,6 +266,7 @@ class Moderation(commands.Cog):
             old_case_id, moderate_type_db, user_id, moderator_id, length, reason, datetime_, old_point, thread_id, change_type_db, changed_case_id_db, change_datetime_db = mod_case
             # 違反ユーザー情報を取得
             user = await self.bot.fetch_user(int(user_id))
+            # 応答時間の延長
             await interaction.response.defer(ephemeral=True)  # noqa
             # コマンド実行日時の取得
             dt = datetime.now(JP)
@@ -317,7 +319,7 @@ class Moderation(commands.Cog):
             # DBへケースIDと記録スレッドIDを保存
             await db.update_modlog_id(thread_id=log.thread.id, case_id=case_id)  # noqa
             # コマンドへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 処罰内容を変更しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 処罰内容を変更しました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed)
             # ログの保存
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -372,7 +374,7 @@ class Moderation(commands.Cog):
                 await thread.send(user.mention)
                 await thread.send(embed=embed)
             # コマンドへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # メッセージの種類が受付以外の場合
         elif msg_type != "受付" and comment_url is not None:
@@ -382,7 +384,7 @@ class Moderation(commands.Cog):
             # WNH内のメッセージリンクではない場合
             if result is None:
                 error_embed = discord.Embed(description="⚠️ このサーバーのメッセージではありません。。",
-                                            color=Color_ERROR)
+                                            color=COLOR_ERROR)
                 await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
             # WNH内のメッセージリンクの場合
             else:
@@ -408,7 +410,7 @@ class Moderation(commands.Cog):
                                                         embed=embed, view=view, ephemeral=True)
         # メッセージの種類が受付以外だったものの、コメント用メッセージリンクが与えられなかった場合
         else:
-            error_embed = discord.Embed(description="⚠️ 受付以外の場合はコメントが必須です。", color=Color_ERROR)
+            error_embed = discord.Embed(description="⚠️ 受付以外の場合はコメントが必須です。", color=COLOR_ERROR)
             await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
 
         # ログの保存
@@ -526,7 +528,7 @@ class SendAppealView(ui.View):
             await thread.send(self.user.mention)
             await thread.send(embed=self.embed)
         # ボタンへの応答
-        response_embed = discord.Embed(description="ℹ️ 送信しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信しました", color=COLOR_OK)
         await interaction.response.edit_message(content=None, embed=response_embed, view=None)  # noqa
 
 
@@ -698,7 +700,7 @@ class DeleteMessageForm(ui.Modal, title="メッセージを削除"):
         for message in messages:
             await message.delete()
         # フォームへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ メッセージを削除しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ メッセージを削除しました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
@@ -820,7 +822,7 @@ class WarnUserProfileForm(ui.Modal, title="不適切なプロフィールの変�
                 await thread.send(self.member.mention)
                 await thread.send(embed=dm_embed, view=ModContactButton())
         # フォームへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 変更指示を送信しました。", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 変更指示を送信しました。", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # # ログの保存
         logger.info(
@@ -960,7 +962,7 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
         # コマンドへのレスポンス
         # 警告後の累計ポイントが1ポイントのため、追加処罰なし
         if new_point == 1:
-            response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
             # ログの保存
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -1062,7 +1064,7 @@ class ModContactForm(ui.Modal, title="意見・質問・申立送信用フォー
         # 処罰通知送信から72時間以上経過している場合、送信防止
         if passed_time.days >= 3:
             response_embed = discord.Embed(description=f"️⚠️ 処罰から3日以上経過しているため送信できません。",
-                                           color=Color_ERROR)
+                                           color=COLOR_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
         # 処罰通知送信から72時間経過していない場合
         else:
@@ -1083,7 +1085,7 @@ class ModContactForm(ui.Modal, title="意見・質問・申立送信用フォー
             await channel.send(embed=embed)
             # フォームへの応答
             response_embed = discord.Embed(description=f"ℹ️ 送信しました。",
-                                           color=Color_OK)
+                                           color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
@@ -1163,7 +1165,7 @@ class MessageReportForm(ui.Modal, title="不適切なメッセージを報告"):
                 except AttributeError:
                     break
         # フォームへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 報告を受け付けました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 報告を受け付けました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
@@ -1235,7 +1237,7 @@ class UserReportForm(ui.Modal, title="不適切なユーザーを報告"):
         avatar_embed.set_image(url=f"attachment://{f.filename}")
         await thread.send(embed=avatar_embed, file=f)
         # フォームへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 報告を受け付けました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 報告を受け付けました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
@@ -1316,7 +1318,7 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
         # 発言禁止処理
         await member.timeout(timedelta(days=length), reason=f"ケース{case_id}")
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 警告を発行・発言禁止にしました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(
@@ -1325,7 +1327,7 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
     else:
         response_embed = discord.Embed(
             description="ℹ️ 警告を発行しました。\n⚠️ ユーザーがサーバーに存在しないため発言禁止処理はスキップされました。",
-            color=Color_OK)
+            color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         pass
 
@@ -1382,7 +1384,7 @@ async def auto_ban(interaction: discord.Interaction, base_case_id: int, member: 
     # ユーザーをBAN
     await guild.ban(user=member, delete_message_days=0, reason=f"ケース{case_id}")
     # コマンドへのレスポンス
-    response_embed = discord.Embed(description="ℹ️ 警告を発行・BANしました", color=Color_OK)
+    response_embed = discord.Embed(description="ℹ️ 警告を発行・BANしました", color=COLOR_OK)
     await interaction.followup.send(embed=response_embed, ephemeral=True)
     # ログの保存
     logger.info(

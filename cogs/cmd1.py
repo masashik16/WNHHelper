@@ -1,15 +1,16 @@
-from datetime import date, datetime, time
 import importlib
 import os
 import statistics
 import sys
 import time
+from datetime import date, datetime, time
 
 import discord
 from dateutil.relativedelta import *
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
+from jinja2.nodes import Literal
 
 import db
 import server
@@ -30,9 +31,9 @@ ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
 ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 ROLE_ID_CLAN_RECRUITER = int(os.environ.get("ROLE_ID_CLAN_RECRUITER"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("cmd1")
 
 
@@ -70,6 +71,7 @@ class Commands1(commands.Cog):
         ])
     async def reload_cog(self, interaction: discord.Interaction, cog_name: str, sync_command: int):
         """cogの再読み込み"""
+        # 応答時間の延長
         await interaction.response.defer(ephemeral=True)  # noqa
         if cog_name == "server":
             server.shutdown_server()
@@ -85,7 +87,7 @@ class Commands1(commands.Cog):
             if sync_command == 1:
                 await self.bot.tree.sync(guild=guild)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description=f"ℹ️ cog「{cog_name}」をリロードしました。", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ cog「{cog_name}」をリロードしました。", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -96,8 +98,9 @@ class Commands1(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def shutdown(self, interaction: discord.Interaction):
+        """BOTとサーバーをシャットダウン"""
         from server import shutdown_server, server_task
-        response_embed = discord.Embed(description=f"ℹ️ シャットダウンを開始しました", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ シャットダウンを開始しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         shutdown_server()
         while True:
@@ -125,12 +128,12 @@ class Commands1(commands.Cog):
         """Discordでの動的タイムスタンプの作成"""
         # 入力値の整形
         date_str = year_date + " " + input_time + " " + "+0900"
-        # 入力値をdatatimeで変換
+        # 入力値をdatatime型に変換
         try:
             date_dt = datetime.strptime(date_str, "%Y/%m/%d %H:%M %z")
         # 入力形式が誤っている場合
         except ValueError:
-            embed = discord.Embed(description="⚠️ 入力が誤っています。次の内容を確認してください。\n", color=Color_ERROR)
+            embed = discord.Embed(description="⚠️ 入力が誤っています。次の内容を確認してください。\n", color=COLOR_ERROR)
             embed.add_field(name="よくあるミス",
                             value="**年月日**\n西暦4桁、月2桁、日2桁で入力する必要があります。"
                                   "\n2000年1月1日の場合は2000/01/01と入力してください。"
@@ -157,24 +160,26 @@ class Commands1(commands.Cog):
         user_info_result = await db.search_user(interaction.user.id)
         try:
             discord_id, account_id, region = user_info_result
+        # 未認証ユーザーが実行した場合
         except ValueError:
-            logger.error(f"{interaction.user.id}でエラー")
+            logger.error(f"{interaction.user.id}が認証を行っていない可能性があります。")
             response_embed = discord.Embed(
-                description="ℹ️ 認証情報が登録されていません。運営チームにお問い合わせください。", color=Color_ERROR)
+                description="ℹ️ 認証情報が登録されていません。運営チームにお問い合わせください。", color=COLOR_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
+        # クランIDを取得
         clan_id = await wows_user_clan(account_id)  # noqa
         if clan_id == "ERROR_ACCOUNT_NOT_FOUND":
             response_embed = discord.Embed(
-                description="ℹ️ この機能はASIAサーバー所属ユーザーのみ利用できます。", color=Color_ERROR)
+                description="ℹ️ この機能はASIAサーバー所属ユーザーのみ利用できます。", color=COLOR_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
         elif clan_id == "ERROR_NOT_JOINED_CLAN":
             response_embed = discord.Embed(
-                description="ℹ️ この機能はクランに所属しているユーザーのみ利用できます。", color=Color_ERROR)
+                description="ℹ️ この機能はクランに所属しているユーザーのみ利用できます。", color=COLOR_ERROR)
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
         else:
             clan_url = f"https://clans.worldofwarships.asia/clan-profile/{clan_id}"
             response_embed = discord.Embed(
-                description=f"ℹ️ あなたの所属しているクランのURLはこちらです。\n{clan_url}", color=Color_OK)
+                description=f"ℹ️ あなたの所属しているクランのURLはこちらです。\n{clan_url}", color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
 
     @app_commands.command(description="報奨ロールの更新")
@@ -188,10 +193,11 @@ class Commands1(commands.Cog):
             discord.app_commands.Choice(name="質問", value="question")
         ])
     async def manual_give_and_take_role(self, interaction: discord.Interaction, mode: str):
+        """月1ロール更新の手動実行"""
         await interaction.response.defer(ephemeral=True)  # noqa
         await self.give_and_take_role(mode)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 更新しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 更新しました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"

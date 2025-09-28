@@ -18,9 +18,9 @@ ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_MATTARI = int(os.environ.get("ROLE_ID_MATTARI"))
 ROLE_ID_GATSU = int(os.environ.get("ROLE_ID_GATSU"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("newbie_role")
 
 
@@ -30,8 +30,6 @@ class Newbie(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    """初心者ロール用ボタンの作成"""
-
     async def create_message(self, interaction: discord.Interaction):
         """初心者用ロール選択用メッセージの送信"""
         # ドロップダウンを含むビューを作成
@@ -40,7 +38,7 @@ class Newbie(commands.Cog):
         channel = interaction.channel
         await channel.send(view=view)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -51,10 +49,11 @@ class Newbie(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def manual_check_newbie_role(self, interaction: discord.Interaction):
+        """初心者用ロールの条件を満たしているかを手動確認"""
         await interaction.response.defer(ephemeral=True)  # noqa
         await self.check_newbie_role()
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 処理が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 処理が完了しました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -73,7 +72,7 @@ class Newbie(commands.Cog):
             try:
                 discord_id, account_id, region = user_info_result
             except ValueError:
-                logger.error(f"{mattari_member.id}でエラー")
+                logger.error(f"{mattari_member.id}が認証を行っていない可能性があります。")
             else:
                 # 戦闘数の照会と代入
                 wg_api_result = await api.wows_user_info(account_id, region)
@@ -87,7 +86,7 @@ class Newbie(commands.Cog):
             try:
                 discord_id, account_id, region = user_info_result
             except ValueError:
-                logger.error(f"{gatsu_member.id}でエラー")
+                logger.error(f"{gatsu_member.id}が認証を行っていない可能性があります。")
             else:
                 # 戦闘数の照会と代入
                 wg_api_result = await api.wows_user_info(account_id, region)
@@ -102,7 +101,7 @@ class Newbie(commands.Cog):
 
 
 class NewbieButton(ui.View):
-    """ボタンの実装"""
+    """初心者ロール取得ボタンの実装"""
 
     def __init__(self):
         super().__init__(timeout=None)
@@ -117,7 +116,10 @@ class NewbieButton(ui.View):
 
 
 async def role_mattari_callback(interaction: discord.Interaction, button: ui.Button):
-    """まったりロール用ボタン押下時の処理"""
+    """まったりロール用ボタン押下時の処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     # ギルドとロールの取得
     role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
     role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
@@ -127,7 +129,7 @@ async def role_mattari_callback(interaction: discord.Interaction, button: ui.But
     role = member.get_role(ROLE_ID_MATTARI)
     # まったりロールを保有している場合は削除
     if role is not None:
-        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を削除しました。", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を削除しました。", color=COLOR_OK)
         await member.remove_roles(role_mattari, reason="初心者用ボタンによる")
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
     else:
@@ -142,13 +144,13 @@ async def role_mattari_callback(interaction: discord.Interaction, button: ui.But
         if battles == "private":
             # ボタンへのレスポンス
             response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
-                                           color=Color_WARN)
+                                           color=COLOR_WARN)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
         else:
             # 戦闘数が3000戦以上の場合
             if role is None and battles > 3000:
                 # Embedの作成と送信
-                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
+                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=COLOR_WARN)
                 await interaction.followup.send(embed=response_embed, ephemeral=True)
             # 戦闘数が3000戦以下の場合
             elif role is None and battles <= 3000:
@@ -158,12 +160,15 @@ async def role_mattari_callback(interaction: discord.Interaction, button: ui.But
                 await member.add_roles(role_mattari, reason="初心者用ボタンによる")
                 # ボタンへのレスポンス
                 response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_MATTARI}>を付与しました。",
-                                               color=Color_OK)
+                                               color=COLOR_OK)
                 await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 
 async def role_gatsu_callback(interaction: discord.Interaction, button: ui.Button):
-    """がつがつロール用ボタン押下時の処理"""
+    """がつがつロール用ボタン押下時の処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     # ギルドとロールの取得
     role_mattari = interaction.guild.get_role(ROLE_ID_MATTARI)
     role_gatsu = interaction.guild.get_role(ROLE_ID_GATSU)
@@ -173,7 +178,7 @@ async def role_gatsu_callback(interaction: discord.Interaction, button: ui.Butto
     role = member.get_role(ROLE_ID_GATSU)
     # がつがつロールを保有している場合は削除
     if role is not None:
-        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を削除しました。", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を削除しました。", color=COLOR_OK)
         await member.remove_roles(role_gatsu, reason="初心者用ボタンによる")
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
     else:
@@ -188,12 +193,12 @@ async def role_gatsu_callback(interaction: discord.Interaction, button: ui.Butto
         if battles == "private":
             # ボタンへのレスポンス
             response_embed = discord.Embed(description="⚠️ 戦績を公開にしてから再度お試しください。",
-                                           color=Color_WARN)
+                                           color=COLOR_WARN)
             await interaction.followup.send(embed=response_embed, ephemeral=True)
         else:
             # 戦闘数が3000戦以上の場合
             if role is None and battles >= 3000:
-                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=Color_WARN)
+                response_embed = discord.Embed(description="⚠️ あなたは初心者ではありません。", color=COLOR_WARN)
                 await interaction.followup.send(embed=response_embed, ephemeral=True)
             # 戦闘数が3000戦以下の場合
             elif role is None and battles < 3000:
@@ -202,7 +207,7 @@ async def role_gatsu_callback(interaction: discord.Interaction, button: ui.Butto
                 # がつがつロールを付与
                 await member.add_roles(role_gatsu, reason="初心者用ボタンによる")
                 # ボタンへのレスポンス
-                response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を付与しました。", color=Color_OK)
+                response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_GATSU}>を付与しました。", color=COLOR_OK)
                 await interaction.followup.send(embed=response_embed, ephemeral=True)
 
 

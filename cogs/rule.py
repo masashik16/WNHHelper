@@ -17,9 +17,9 @@ ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
 ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("newbie_role")
 
 """コマンドの実装"""
@@ -34,25 +34,25 @@ class Rule(commands.Cog):
     """ルール同意ボタンの作成"""
 
     async def create_message(self, interaction: discord.Interaction):
-        """ルール同意用メッセージの作成"""
+        """ルール同意用メッセージの送信"""
         # ドロップダウンを含むビューを作成
         # ビューを含むメッセージを送信
         channel = interaction.channel
         await channel.send(view=RuleMessageView())
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
 
     async def create_message2(self, interaction: discord.Interaction):
-        """ロール無しユーザー用メッセージを作成"""
+        """ロール無しユーザー用メッセージを送信"""
         # # ビューを含むメッセージを送信
         channel = interaction.channel
         await channel.send(view=NoRoleMessageView())
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -60,6 +60,7 @@ class Rule(commands.Cog):
 
     @commands.Cog.listener("on_member_join")
     async def member_join(self, member: discord.Member):
+        """ギルド参加時に参加時ロールを付与"""
         role = member.guild.get_role(ROLE_ID_WAIT_AGREE_RULE)
         await member.add_roles(role, reason="参加時ロール付与")
 
@@ -69,6 +70,7 @@ class Rule(commands.Cog):
 
 
 class RuleMessageView(ui.LayoutView):
+    """ルールメッセージの実装"""
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -137,6 +139,11 @@ class RuleMessageView(ui.LayoutView):
         await rule_agree_button_callback(interaction, button)
 
 async def rule_agree_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """ルール同意ボタン押下時の処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # 応答時間の延長
     await interaction.response.defer(ephemeral=True)  # noqa
     # ギルドとロールの取得
     role_wait_agree_rule = interaction.guild.get_role(ROLE_ID_WAIT_AGREE_RULE)
@@ -149,6 +156,7 @@ async def rule_agree_button_callback(interaction: discord.Interaction, button: u
     # 未同意の場合
     if role is not None:
         user_info_result = await search_user(interaction.user.id)
+        # 認証履歴がない場合
         if user_info_result == "ERROR":
             role_list = member.roles
             if role_wait_agree_rule in role_list:
@@ -160,10 +168,13 @@ async def rule_agree_button_callback(interaction: discord.Interaction, button: u
             # ボタンへのレスポンス
             response_embed = discord.Embed(title="ルールに同意いただきありがとうございます。",
                                            description="続いて<#1022770176082591836>から認証を行ってください。",
-                                           color=Color_OK)
+                                           color=COLOR_OK)
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
+        # 認証履歴が存在する場合
         else:
+            # 変数に代入
             discord_id, account_id, region = user_info_result
+            # ロールの変更準備
             role_list = member.roles
             if role_wait_agree_rule in role_list:
                 role_list.remove(role_wait_agree_rule)
@@ -172,22 +183,24 @@ async def rule_agree_button_callback(interaction: discord.Interaction, button: u
             # 戦闘数の照会と代入
             wg_api_result = await wows_user_info(account_id, region)
             nickname, battles = wg_api_result
+            # ロールを変更してボタンに応答
             await member.edit(roles=role_list, reason="ルール同意による（認証履歴あり）")
             response_embed = discord.Embed(title="ルールに同意いただきありがとうございます。",
                                            description="過去に認証履歴があるため認証は不要です。"
                                                        "\nあなたのメインアカウントが下記の情報と異なる場合、お手数ですがhttps://discord.com/channels/977773343396728872/977773343824560131からご連絡ください。",
-                                           color=Color_OK)
+                                           color=COLOR_OK)
             response_embed.add_field(name="登録されているWoWSアカウント情報",
                                      value=f"サーバー：{region}\nIGN：{nickname}")
             await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
     # 既に同意済みの場合
     else:
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ あなたは既にルールに同意しています。", color=Color_WARN)
+        response_embed = discord.Embed(description="ℹ️ あなたは既にルールに同意しています。", color=COLOR_WARN)
         await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
 
 
 class NoRoleMessageView(ui.LayoutView):
+    """必要なロールが付与されていないユーザー向けメッセージ"""
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -203,24 +216,28 @@ class NoRoleMessageView(ui.LayoutView):
         await no_role_button_callback(interaction, button)
 
 async def no_role_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """参加時ロール取得ボタン押下時の処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     # ギルドとロールの取得
     role_wait_agree_rule = interaction.guild.get_role(ROLE_ID_WAIT_AGREE_RULE)
     # ボタンを押したユーザーを取得
     member = interaction.guild.get_member(interaction.user.id)
-    # ユーザーがルール同意済かどうか確認
+    # ユーザーが参加時ロールを保有しているかどうか確認
     role = member.get_role(ROLE_ID_WAIT_AGREE_RULE)
-    # 未同意の場合
+    # 保有していない場合
     if role is None:
         await member.add_roles(role_wait_agree_rule, reason="ルール未同意ロール未付与のため付与")
         # ボタンへのレスポンス
         response_embed = discord.Embed(title="必要なロールが付与されました。",
                                        description="続いて<#977773343396728880>から手続きの流れをご確認ください。",
-                                       color=Color_OK)
+                                       color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-    # 既に同意済みの場合
+    # 保有している場合
     else:
         # ボタンへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ すでに必要なロールが付与されています。", color=Color_WARN)
+        response_embed = discord.Embed(description="ℹ️ すでに必要なロールが付与されています。", color=COLOR_WARN)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
 
 

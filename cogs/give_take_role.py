@@ -16,9 +16,9 @@ ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 ROLE_ID_MATTARI = int(os.environ.get("ROLE_ID_MATTARI"))
 ROLE_ID_GATSU = int(os.environ.get("ROLE_ID_GATSU"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("give_take_role")
 
 

@@ -25,9 +25,9 @@ ROLE_ID_MOD = int(os.environ.get("ROLE_ID_MOD"))
 ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
 ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("msg")
 JP = pytz.timezone("Asia/Tokyo")
 
@@ -60,7 +60,7 @@ class Message(commands.Cog):
             discord.app_commands.Choice(name="no_role", value="no_role")
         ])
     async def create_module_message(self, interaction: discord.Interaction, message: str):
-        """モジュールメッセージの作成"""
+        """モジュールメッセージの送信"""
         if message == "auth":
             auth = self.bot.get_cog("Auth")
             await auth.create_message(interaction)  # noqa
@@ -99,7 +99,7 @@ class Message(commands.Cog):
             discord.app_commands.Choice(name="event2", value="event2"),
         ])
     async def create_event_button(self, interaction: discord.Interaction, button: str):
-        """イベントボタンの作成"""
+        """イベントボタンの送信"""
         if button == "event1":
             event = self.bot.get_cog("Event")
             await event.create_message(interaction, "event1")  # noqa
@@ -107,7 +107,7 @@ class Message(commands.Cog):
             event = self.bot.get_cog("Event")
             await event.create_message(interaction, "event2")  # noqa
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -120,17 +120,24 @@ class Message(commands.Cog):
     @discord.app_commands.rename(user="照会するユーザー")
     async def get_dm_log(self, interaction: discord.Interaction, user: discord.User):
         """DM履歴の確認"""
+        # 応答時間の延長
         await interaction.response.defer(ephemeral=True)  # noqa
+        # ユーザーのDMが存在しない場合に備え、作成
         dm = await user.create_dm()
+        # メッセージのリストを作成
         messages = [message async for message in dm.history(limit=200, oldest_first=True)]
+        # リストが空ではない場合
         if messages:
+            # 現在日時を取得
             dt = datetime.now(JP)
             dt_str = dt.strftime("%Y/%m/%d %H:%M")
+            # DM履歴転送先のスレッドを作成（コマンドが実行されたCHがスレッドの場合は自身を選択）
             thread_message = await interaction.channel.send(f"DM履歴 - {user.mention} - {dt_str}取得")
             if type(interaction.channel) == discord.Thread:
                 thread = interaction.channel
             else:
                 thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得", message=thread_message)
+            # メッセージを転送
             for message in messages:
                 create_time = message.created_at.astimezone(JP)
                 create_time_str = create_time.strftime("%Y/%m/%d %H:%M")
@@ -151,15 +158,18 @@ class Message(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def delete_dm(self, interaction: discord.Interaction):
-        """DM削除"""
+        """コマンド実行者とこのBOTのDM内容を削除（このBOTが送信したもののみ）"""
+        # 応答時間の延長
         await interaction.response.defer(ephemeral=True)  # noqa
+        # コマンド実行者とDM_CHの取得
         user = interaction.user
         dm = await user.create_dm()
+        # メッセージ履歴を取得して自身が送信したメッセージであれば削除
         async for message in dm.history(limit=200):
             if message.author == self.bot.user:
                 await message.delete()
-                # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 完了しました", color=Color_OK)
+        # コマンドへのレスポンス
+        response_embed = discord.Embed(description="ℹ️ 完了しました", color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -194,7 +204,7 @@ class Message(commands.Cog):
         # Embedの送信
         await channel.send(f"<@&{ROLE_ID_WAIT_AGREE_RULE}>", embed=embed)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -224,7 +234,7 @@ class Message(commands.Cog):
         # Embedの送信
         await channel.send(f"<@&{ROLE_ID_WAIT_AUTH}>", embed=embed)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -266,11 +276,11 @@ class Message(commands.Cog):
             except discord.Forbidden:
                 response_embed = discord.Embed(
                     description="⚠️ 権限がありません。<@1019156547449913414>が送信したメッセージではない可能性があります。",
-                    color=Color_ERROR)
+                    color=COLOR_ERROR)
                 await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
             else:
                 # コマンドへのレスポンス
-                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=Color_OK)
+                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=COLOR_OK)
                 await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -291,6 +301,7 @@ class Message(commands.Cog):
             await interaction.response.send_message("このサーバーのメッセージではありません", ephemeral=True)  # noqa
         # WNH内のメッセージリンクの場合
         else:
+            # 応答時間の延長
             await interaction.response.defer(ephemeral=True)  # noqa
             # 値の代入とチャンネル・メッセージの取得
             guild = self.bot.get_guild(GUILD_ID)
@@ -316,14 +327,14 @@ class Message(commands.Cog):
                 filename=f"transcript-{channel.name}-{dt}_{count}.html",
             )
             #
-            # Embedを作成
+            # HTMLを送信
             await interaction.followup.send(file=transcript_file, ephemeral=True)  # noqa
 
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def transfer_message(self, interaction: discord.Interaction, message: discord.Message):
-        """メッセージをBOTとして転送"""
+        """メッセージをBOTとして転送するメニューの呼び出し"""
         view = MsgTransferDropdownView(message)
         await interaction.response.send_message("転送先の種類を選択してください。", view=view, ephemeral=True)  # noqa
 
@@ -332,7 +343,7 @@ class Message(commands.Cog):
     @app_commands.guilds(GUILD_ID)
     @app_commands.guild_only()
     async def create_embed(self, interaction: discord.Interaction):
-        """Embedを作成"""
+        """Embedを作成するフォームの呼び出し"""
         # フォームの呼び出し
         await interaction.response.send_modal(CreateEmbedForm())  # noqa
         # ログの保存
@@ -367,6 +378,7 @@ class MsgTransferDropdownView(ui.View):
         ],
     )
     async def set_type(self, interaction: discord.Interaction, select: ui.Select):
+        """送信先選択時に変数に代入"""
         if select.values[0] == "channel":
             self.add_item(self.set_channel)  # noqa
             self.type = "channel"
@@ -386,6 +398,7 @@ class MsgTransferDropdownView(ui.View):
         channel_types=[discord.ChannelType.text, discord.ChannelType.news],
     )
     async def set_channel(self, interaction: discord.Interaction, select: ui.ChannelSelect):
+        """転送先のCHを取得して確認画面を送信"""
         self.send_list = select.values[0]
         transfer_to = self.send_list.name
         embed = discord.Embed()
@@ -401,7 +414,8 @@ class MsgTransferDropdownView(ui.View):
         placeholder="転送先のユーザーを選択",
         max_values=25
     )
-    async def set_user(self, interaction: discord.Interaction, select: ui.ChannelSelect):
+    async def set_user(self, interaction: discord.Interaction, select: ui.UserSelect):
+        """転送先のユーザーを取得して確認画面を送信"""
         self.send_list = select.values
         transfer_to = None
         for user in self.send_list:
@@ -421,7 +435,8 @@ class MsgTransferDropdownView(ui.View):
         cls=ui.RoleSelect,
         placeholder="転送先のロールを選択",
     )
-    async def set_role(self, interaction: discord.Interaction, select: ui.ChannelSelect):
+    async def set_role(self, interaction: discord.Interaction, select: ui.RoleSelect):
+        """転送先のロールを保有したユーザーを取得して確認画面を送信"""
         self.send_list = select.values[0]
         transfer_to = self.send_list.name
         embed = discord.Embed()
@@ -434,6 +449,8 @@ class MsgTransferDropdownView(ui.View):
 
     @ui.button(label="OK", style=discord.ButtonStyle.success)  # noqa
     async def transfer_message_button(self, interaction: discord.Interaction, button: ui.Button):
+        """転送ボタン押下時の処理"""
+        # 送信先がチャンネルの場合
         if self.type == "channel":
             channel = await self.send_list.fetch()
             if not self.message.embeds:
@@ -442,6 +459,7 @@ class MsgTransferDropdownView(ui.View):
                 await channel.send(content=self.message.content, embed=self.message.embeds[0])
             logger.info(
                 f"ユーザー：{interaction.user}（UID：{interaction.user.id}）がメッセージID：{self.message.jump_url}を{channel.name}に転送しました。")
+        # 送信先がユーザーの場合
         elif self.type == "user":
             for user in self.send_list:
                 if not self.message.embeds:
@@ -450,6 +468,7 @@ class MsgTransferDropdownView(ui.View):
                     await user.send(content=self.message.content, embed=self.message.embeds[0])
                 logger.info(
                     f"ユーザー：{interaction.user}（UID：{interaction.user.id}）がメッセージID：{self.message.jump_url}を{user.display_name}に転送しました。")
+        # 送信先がロールの場合
         else:
             for user in self.send_list.members:
                 if not self.message.embeds:
@@ -458,12 +477,13 @@ class MsgTransferDropdownView(ui.View):
                     await user.send(content=self.message.content, embed=self.message.embeds[0])
                 logger.info(
                     f"ユーザー：{interaction.user}（UID：{interaction.user.id}）がメッセージID：{self.message.jump_url}を{user.display_name}に転送しました。")
-        response_embed = discord.Embed(description="ℹ️ 転送しました", color=Color_OK)
+        # ボタンへの応答
+        response_embed = discord.Embed(description="ℹ️ 転送しました", color=COLOR_OK)
         await interaction.response.edit_message(content=None, embed=response_embed, view=None)  # noqa
 
 
-class CreateEmbedButton(ui.View):
-    """ボタンの実装"""
+class AddEmbedFieldButton(ui.View):
+    """Embedのフィールド追加フォームを開くボタンの実装"""
 
     def __init__(self, message: discord.Message, embed: discord.Embed):
         super().__init__(timeout=None)
@@ -519,10 +539,12 @@ class CreateEmbedForm(ui.Modal, title="Embedを作成"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        # 応答時間の延長
         await interaction.response.defer(ephemeral=True)  # noqa
+        # 作成条件を満たさない場合
         if self.embed_title.value == "" and self.embed_description.value == "" and self.field1_name.value == "" and self.field1_value.value == "":
             error_embed = discord.Embed(title="⚠️ エラーが発生しました", description="最低1項目は入力が必要です。",
-                                        color=Color_ERROR)
+                                        color=COLOR_ERROR)
             await interaction.followup.send(embed=error_embed, ephemeral=True)
         else:
             # Embedの作成
@@ -531,7 +553,8 @@ class CreateEmbedForm(ui.Modal, title="Embedを作成"):
             # フォームへのレスポンス
             channel = interaction.channel
             message = await channel.send(content="読み込み中")
-            view = CreateEmbedButton(message=message, embed=embed)
+            # 作成したEmbed入りメッセージとフィールド追加用ボタンを送信
+            view = AddEmbedFieldButton(message=message, embed=embed)
             await message.edit(content=self.message_content.value, embed=embed, view=view)
             # ログの保存
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -543,7 +566,10 @@ class CreateEmbedForm(ui.Modal, title="Embedを作成"):
 
 
 class AddEmbedFieldForm(ui.Modal, title="フィールドを追加"):
-    """フォームの実装"""
+    """フィールド追加用フォーム
+
+    CreateEmbedFormで作成したEmbedにフィールドを追加するためのフォーム
+    """
 
     def __init__(self, message: discord.Message, embed: discord.Embed):
         """ギルド、ロール、チャンネルの事前定義"""
@@ -580,12 +606,13 @@ class AddEmbedFieldForm(ui.Modal, title="フィールドを追加"):
 
     async def on_submit(self, interaction: discord.Interaction):
         """フォーム送信時の処理"""
+        # 応答時間の延長
         await interaction.response.defer(ephemeral=True)  # noqa
         # Embedの作成
         self.embed.add_field(name=self.field1_name.value, value=self.field1_value.value, inline=False)
         self.embed.add_field(name=self.field2_name.value, value=self.field2_value.value, inline=False)
         # フォームへのレスポンス
-        view = CreateEmbedButton(message=self.message, embed=self.embed)
+        view = AddEmbedFieldButton(message=self.message, embed=self.embed)
         await self.message.edit(embed=self.embed, view=view)
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"

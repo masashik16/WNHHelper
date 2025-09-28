@@ -18,9 +18,9 @@ ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
 ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 CHANNEL_ID_RULE = int(os.environ.get("CHANNEL_ID_RULE"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("cmd2")
 
 
@@ -58,11 +58,11 @@ class Commands2(commands.Cog):
     #         except discord.Forbidden:
     #             response_embed = discord.Embed(
     #                 description="⚠️ 権限がありません。<@1019156547449913414>が送信したメッセージではない可能性があります。",
-    #                 color=Color_ERROR)
+    #                 color=COLOR_ERROR)
     #             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
     #         else:
     #             # コマンドへのレスポンス
-    #             response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=Color_OK)
+    #             response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=COLOR_OK)
     #             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
     #             # ログの保存
     #             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -84,7 +84,7 @@ class Commands2(commands.Cog):
                                    "\n招待の際はこちらをご利用ください"
                                    "\nhttps://discord.gg/jy4JcxQ3TK")
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -113,7 +113,7 @@ class Commands2(commands.Cog):
         # Embedの送信
         await channel.send(content="", embed=embed)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -147,11 +147,11 @@ class Commands2(commands.Cog):
             except discord.Forbidden:
                 response_embed = discord.Embed(
                     description="⚠️ 権限がありません。<@1019156547449913414>が送信したメッセージではない可能性があります。",
-                    color=Color_ERROR)
+                    color=COLOR_ERROR)
                 await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
             else:
                 # コマンドへのレスポンス
-                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=Color_OK)
+                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=COLOR_OK)
                 await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
                 # ログの保存
                 logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"

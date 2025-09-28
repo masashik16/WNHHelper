@@ -17,9 +17,9 @@ GUILD_ID = int(os.environ.get("GUILD_ID"))
 ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
 ROLE_ID_DIVISION = int(os.environ.get("ROLE_ID_DIVISION"))
 CHANNEL_ID_DIVISION = int(os.environ.get("CHANNEL_ID_DIVISION"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("division")
 
 
@@ -30,12 +30,12 @@ class Division(commands.Cog):
         self.bot = bot
 
     async def create_message(self, interaction: discord.Interaction):
-        """分隊募集ボタンを作成"""
+        """分隊募集案内メッセージを送信"""
         # ビューを含むメッセージを送信
         channel = interaction.channel
         await channel.send(view=DivisionView(), allowed_mentions=DISALLOW_MENTION)
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -50,6 +50,7 @@ class Division(commands.Cog):
 
 
 class DivisionView(ui.LayoutView):
+    """分隊募集方法案内メッセージ"""
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -83,21 +84,32 @@ class DivisionView(ui.LayoutView):
 
 
 async def division_role_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """分隊ロール取得/削除ボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
+    # ロールを取得
     div_role = interaction.guild.get_role(ROLE_ID_DIVISION)
     role = interaction.user.get_role(ROLE_ID_DIVISION)
+    # ロールがある場合は削除
     if role is not None:
-        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を削除しました。", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を削除しました。", color=COLOR_OK)
         await interaction.user.remove_roles(div_role, reason="分隊ロールボタンによる")
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
+    # ロールがない場合は追加
     else:
-        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を取得しました。", color=Color_OK)
+        response_embed = discord.Embed(description=f"ℹ️ <@&{ROLE_ID_DIVISION}>を取得しました。", color=COLOR_OK)
         await interaction.user.add_roles(div_role, reason="分隊ロールボタンによる")
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
 
 
 async def division_form_button_callback(interaction: discord.Interaction, button: ui.Button):
+    """分隊募集ボタンの処理
+
+    ボタン系はボタンのcallbackに直接書かず、別関数にすることによって処理内容変更後にボタンを再生成せずとも反映できる。
+    """
     if interaction.user.is_timed_out():
-        error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=Color_ERROR)
+        error_embed = discord.Embed(description="⚠️ タイムアウト中は利用できません", color=COLOR_ERROR)
         await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
     else:
         # フォームの呼び出し
@@ -185,7 +197,7 @@ class DivisionForm(ui.Modal, title="分隊募集フォーム"):
         await thread.add_user(user)
         # フォームへのレスポンス
         response_embed = discord.Embed(description=f"ℹ️ <#{CHANNEL_ID_DIVISION}>に分隊募集を作成しました",
-                                       color=Color_OK)
+                                       color=COLOR_OK)
         await interaction.followup.send(embed=response_embed, ephemeral=True)
         # DBに保存
         action_datetime = time.time()

@@ -20,9 +20,9 @@ ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
 ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
 ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
 ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-Color_OK = 0x00ff00
-Color_WARN = 0xffa500
-Color_ERROR = 0xff0000
+COLOR_OK = 0x00ff00
+COLOR_WARN = 0xffa500
+COLOR_ERROR = 0xff0000
 logger = logger.getChild("auth")
 
 
@@ -33,12 +33,12 @@ class Auth(commands.Cog):
         self.bot = bot
 
     async def create_message(self, interaction: discord.Interaction):
-        """認証用メッセージを作成"""
-        # # ビューを含むメッセージを送信
+        """認証用メッセージを送信"""
+        # チャンネルを取得して送信
         channel = interaction.channel
         await channel.send(view=AuthMessageView())
         # コマンドへのレスポンス
-        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=Color_OK)
+        response_embed = discord.Embed(description="ℹ️ 送信が完了しました", color=COLOR_OK)
         await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
@@ -78,7 +78,7 @@ class Auth(commands.Cog):
             # 反映
             await member.edit(roles=role_list, reason="手動認証による")
             # コマンドへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 登録しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 登録しました", color=COLOR_OK)
             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                         f"がコマンド「{interaction.command.name}」を使用し、{member.display_name}を手動で認証しました。")
@@ -95,14 +95,17 @@ class Auth(commands.Cog):
             # 反映
             await member.edit(roles=role_list, reason="手動認証による")
             # コマンドへのレスポンス
-            response_embed = discord.Embed(description="ℹ️ 更新しました", color=Color_OK)
+            response_embed = discord.Embed(description="ℹ️ 更新しました", color=COLOR_OK)
             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                         f"がコマンド「{interaction.command.name}」を使用し、{member.display_name}を手動で認証しました。")
         # エラー処理
         else:
-            error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=Color_ERROR)
+            error_embed = discord.Embed(description="⚠️ エラーが発生しました", color=COLOR_ERROR)
             await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
+            # ログの保存
+            logger.error(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
+                         f"がコマンド「{interaction.command.name}」を使用しようとしましたが、失敗しました。")
 
     @app_commands.command(description="戦闘数確認")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
@@ -127,9 +130,9 @@ class Auth(commands.Cog):
             # 対象ユーザーのアバターと表示名の取得
             avatar = user.display_avatar.url
             server_name = user.display_name
-            # Embedの作成
+            # WGアカウントはあるがPC版WoWSプレイ歴がない場合
             if nickname == "ERROR":
-                embed = discord.Embed(color=Color_ERROR)
+                embed = discord.Embed(color=COLOR_ERROR)
                 embed.add_field(name="Discordアカウント", value=f"<@{discord_id}>", inline=False)
                 embed.add_field(name="アカウントID", value=f"{account_id}", inline=True)
                 embed.add_field(name="IGN", value=f"取得不可", inline=True)
@@ -146,7 +149,7 @@ class Auth(commands.Cog):
             # 戦績非公開の場合
             elif battles == "private":
                 # Embedの作成
-                embed = discord.Embed(color=Color_ERROR)
+                embed = discord.Embed(color=COLOR_ERROR)
                 embed.add_field(name="Discordアカウント", value=f"<@{discord_id}>", inline=True)
                 embed.add_field(name="IGN", value=f"{nickname}", inline=True)
                 embed.add_field(name="戦闘数", value="非公開", inline=True)
@@ -161,7 +164,7 @@ class Auth(commands.Cog):
             # 戦闘数が3000戦以下の場合
             elif battles <= 3000:
                 # Embedの作成
-                embed = discord.Embed(color=Color_OK)
+                embed = discord.Embed(color=COLOR_OK)
                 embed.add_field(name="Discordアカウント", value=f"<@{discord_id}>", inline=True)
                 embed.add_field(name="IGN", value=f"{nickname}", inline=True)
                 embed.add_field(name="戦闘数", value=f"{battles}戦", inline=True)
@@ -195,6 +198,7 @@ class Auth(commands.Cog):
 
 
 class AuthMessageView(ui.LayoutView):
+    """認証用メッセージ"""
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -286,7 +290,7 @@ class AuthMessageView(ui.LayoutView):
 #             await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
 
 
-async def get_wows_url(account_id, region):
+async def get_wows_url(account_id, region) -> str:
     """WoWSのプロフィールリンクの生成"""
     if region == "ASIA":
         return f"https://profile.worldofwarships.asia/statistics/{account_id}/"
@@ -294,10 +298,13 @@ async def get_wows_url(account_id, region):
         return f"https://profile.worldofwarships.eu/statistics/{account_id}/"
     elif region == "NA":
         return f"https://profile.worldofwarships.com/statistics/{account_id}/"
+    else:
+        return "ERROR"
 
 
 async def add_role_authed(bot, discord_id):
     """サーバーによる認証後のロール付与"""
+    # ギルド、メンバー、ロールを取得
     guild = bot.get_guild(GUILD_ID)
     member = guild.get_member(discord_id)
     role_wait_auth = guild.get_role(ROLE_ID_WAIT_AUTH)
@@ -313,22 +320,21 @@ async def add_role_authed(bot, discord_id):
     await member.edit(roles=role_list, reason="WG ID認証完了による")
 
 
-async def check_authed(bot, discord_id):
-    """サーバーによる認証後のロール付与"""
-    guild = bot.get_guild(GUILD_ID)
-    member = guild.get_member(int(discord_id))
-    try:
-        role_authed = member.get_role(ROLE_ID_AUTHED)
-    except:
-        return False
-    if role_authed is None:
-        return False
-    else:
-        return True
+# async def check_authed(bot, discord_id):
+#     """サーバーによる認証後のロール付与"""
+#     guild = bot.get_guild(GUILD_ID)
+#     member = guild.get_member(int(discord_id))
+#     try:
+#         role_authed = member.get_role(ROLE_ID_AUTHED)
+#     except:
+#         return False
+#     if role_authed is None:
+#         return False
+#     else:
+#         return True
 
 
 async def setup(bot):
     """起動時のコグへの追加"""
     await bot.add_cog(Auth(bot))
-    # bot.add_view(view=AuthDropdownView())
     bot.add_view(view=AuthMessageView())
