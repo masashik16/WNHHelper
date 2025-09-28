@@ -27,14 +27,14 @@ INITIAL_EXTENSIONS = [
     "cogs.cmd1",
     "cogs.cmd2",
     "cogs.event",
-    # "cogs.discord_event",
-    # "cogs.division",
-    # "cogs.give_take_role",
+    "cogs.discord_event",
+    "cogs.division",
+    "cogs.give_take_role",
     "cogs.mod",
     "cogs.msg",
-    # "cogs.newbie_role",
+    "cogs.newbie_role",
     "cogs.rule",
-    "cogs.test"
+    # "cogs.test"
 ]
 
 

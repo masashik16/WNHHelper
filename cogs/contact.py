@@ -59,7 +59,7 @@ DICT_LOG_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_LOG, "REPORT": REPORT_LOG,
                      "CLAN": CLAN_LOG}
 DICT_SAVE_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_SAVE, "REPORT": REPORT_SAVE,
                       "CLAN": CLAN_SAVE}
-
+import re
 
 class Contact(commands.Cog):
     """コマンド実装用のクラス"""
@@ -79,45 +79,6 @@ class Contact(commands.Cog):
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
 
-    @app_commands.command(description="メッセージ編集用")
-    @app_commands.check(check_developer)
-    @app_commands.guilds(GUILD_ID)
-    @app_commands.guild_only()
-    @app_commands.rename(url="メッセージリンクのurl")
-    async def edit_message99(self, interaction: discord.Interaction, url: str):
-        """BOTが送信したメッセージの編集"""
-        import re
-        # URLがWNH内のメッセージリンクかどうか検証
-        pattern = rf"(?<=https://discord.com/channels/{GUILD_ID})/([0-9]*)/([0-9]*)"
-        result = re.search(pattern, url)
-        # WNH内のメッセージリンクではない場合
-        if result is None:
-            await interaction.response.send_message("このサーバーのメッセージではありません", ephemeral=True)  # noqa
-        # WNH内のメッセージリンクの場合
-        else:
-            # 値の代入とチャンネル・メッセージの取得
-            guild = self.bot.get_guild(GUILD_ID)
-            channel_id = int(result.group(1))
-            channel = await guild.fetch_channel(channel_id)
-            message_id = int(result.group(2))
-            message = await channel.fetch_message(message_id)
-            # 編集後の内容の定義
-            # メッセージを編集
-            try:
-                await message.edit(view=ToolButtonView())
-            # 送信者がこのBOTでない場合
-            except discord.Forbidden:
-                response_embed = discord.Embed(
-                    description="⚠️ 権限がありません。<@1019156547449913414>が送信したメッセージではない可能性があります。",
-                    color=Color_ERROR)
-                await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-            else:
-                # コマンドへのレスポンス
-                response_embed = discord.Embed(description="ℹ️ 編集が完了しました", color=Color_OK)
-                await interaction.response.send_message(embed=response_embed, ephemeral=True)  # noqa
-                # ログの保存
-                logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                            f"がコマンド「{interaction.command.name}」を使用し、メッセージ「{url}」を編集しました。。")
 
     @app_commands.command(description="チケットクローズ案内_通常")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
@@ -306,7 +267,6 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
         # メッセージを送信し、紐づくスレッドを作成
         message = await channel_inquiry.send(view=view)
         thread = await message.create_thread(name=f"議論用")
-        await thread.add_user(user)
         # フォームへのレスポンス
         response_embed = discord.Embed(description=f"ℹ️ ご意見・ご要望を受け付けました。",
                                        color=Color_OK)
@@ -341,7 +301,7 @@ class ClanButton(ui.ActionRow):
             await interaction.response.send_message(embed=error_embed, ephemeral=True)  # noqa
         else:
             button.disabled = True
-            await interaction.response.send_modal(ClanForm(view=self))  # noqa
+            await interaction.response.send_modal(ClanForm(view=self.view))  # noqa
 
 
 class ClanTicketView(ui.LayoutView):
@@ -667,7 +627,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     )
 
     dt2 = ui.Label(
-        text="第一希望（平日枠）",
+        text="第二希望（平日枠）",
         description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
         component=ui.TextInput(
             placeholder="例：1/1 10:00～11:00",
@@ -676,7 +636,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     )
 
     dt3 = ui.Label(
-        text="第一希望（平日枠）",
+        text="第一希望（土日祝枠）",
         description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
         component=ui.TextInput(
             placeholder="例：1/1 10:00～11:00",
@@ -685,7 +645,7 @@ class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     )
 
     dt4 = ui.Label(
-        text="第一希望（平日枠）",
+        text="第二希望（土日祝枠）",
         description="本日から7日後以降で希望日と希望枠を入力してください。（参加できない枠は不可と入力してください。）",
         component=ui.TextInput(
             placeholder="例：1/1 10:00～11:00",
