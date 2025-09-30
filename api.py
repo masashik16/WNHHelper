@@ -1,21 +1,19 @@
 import json
-import os
 
 import requests
-from dotenv import load_dotenv
 
+from constant import WARGAMING_APPLICATION_ID
 from logs import logger
 
-load_dotenv()
-APPLICATION_ID = os.environ.get("APPLICATION_ID")
 logger = logger.getChild("api")
 region_list = ["ASIA", "EU", "NA"]
 TLD = {"ASIA": "asia", "EU": "eu", "NA": "com"}
 
+
 async def wows_user_clan(account_id):
     """WoWSクラン情報の取得"""
     url = f"https://api.worldofwarships.asia/wows/clans/accountinfo/"
-    params = {"application_id": APPLICATION_ID, "account_id": account_id}
+    params = {"application_id": WARGAMING_APPLICATION_ID, "account_id": account_id}
     res = requests.get(url, params=params)
     data = json.loads(res.text)
     clan = data["data"][f"{account_id}"]
@@ -26,10 +24,11 @@ async def wows_user_clan(account_id):
         return "ERROR_NOT_JOINED_CLAN"
     return clan_id
 
+
 async def wows_clan_search(clan_id):
     """WoWSクラン情報の取得"""
     url = f"https://api.worldofwarships.asia/wows/clans/info/"
-    params = {"application_id": APPLICATION_ID, "clan_id": clan_id}
+    params = {"application_id": WARGAMING_APPLICATION_ID, "clan_id": clan_id}
     res = requests.get(url, params=params)
     data = json.loads(res.text)
     clan = data["data"][f"{clan_id}"]
@@ -46,7 +45,7 @@ async def wows_account_search(account_id, nickname):
     """WoWS情報の取得"""
     for region in region_list:
         url = f"https://api.worldofwarships.{TLD[region]}/wows/account/list/"
-        params = {"application_id": APPLICATION_ID, "search": nickname, "type": "exact"}
+        params = {"application_id": WARGAMING_APPLICATION_ID, "search": nickname, "type": "exact"}
         res = requests.get(url, params=params)
         data = json.loads(res.text)
         if not data["data"]:
@@ -61,10 +60,11 @@ async def wows_account_search(account_id, nickname):
 async def wows_user_info(account_id, region):
     """WG APIの呼び出し"""
     url = f"https://api.worldofwarships.{TLD[region]}/wows/account/info/"
-    params = {"application_id": APPLICATION_ID, "account_id": account_id,
+    params = {"application_id": WARGAMING_APPLICATION_ID, "account_id": account_id,
               "fields": "account_id, hidden_profile, nickname, statistics.pvp.battles"}
     res = requests.get(url, params=params)
     data = json.loads(res.text)
+    print(data)
     user = data["data"][account_id]
     if user is None:
         nickname = "ERROR"
