@@ -1,7 +1,6 @@
 import asyncio
 import ipaddress
 import logging
-import os
 import signal
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
@@ -9,31 +8,23 @@ from datetime import timedelta
 
 from authlib.integrations.flask_client import OAuth
 from cachelib.file import FileSystemCache
-from dotenv import load_dotenv
 from flask import abort, Flask, render_template, request
 from hypercorn.asyncio import serve
 from hypercorn.config import Config as HyperConfig
 
+from constant import FLASK_SERVICE_PORT, FLASK_DOMAIN, FLASK_SECRET_KEY, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, ENV
 from exception import FlaskCustomError
 from flask_session import Session
 from logs import logger, handler
 from views.wg_auth import construct_blueprint as app_wg_auth
 
-load_dotenv()
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-SERVICE_PORT = int(os.environ.get("SERVICE_PORT"))
-DOMAIN = os.environ.get("DOMAIN")
-ENV = os.environ.get("ENV")
 logger = logger.getChild("server")
 
-client_id = os.environ.get("DISCORD_CLIENT_ID")
-client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
-GAS_KEY = os.environ.get("GAS_KEY")
-SECRET_KEY = os.environ.get("SECRET_KEY")
 # Python 3.14以降でos.reload_environ()とともに変更
 # DISALLOW_NETWORKS = os.environ.get("DISALLOW_NETWORKS").replace(" ", "").split(",")
 DISALLOW_NETWORKS = ["91.238.180.0/23", "147.45.0.0/16", "206.168.32.0/22", "194.165.16.0/23", "88.214.24.0/22",
-                     "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24", "185.177.72.0/24","172.192.72.234/24", "172.190.142.176/24", "40.113.19.56/24"]
+                     "88.214.24.0/22", "185.93.89.0/24", "195.178.110.0/24", "185.177.72.0/24", "172.192.72.234/24",
+                     "172.190.142.176/24", "40.113.19.56/24"]
 
 hypercorn_access_logger = logging.getLogger("server.access")
 hypercorn_access_logger.addHandler(handler)
@@ -82,10 +73,10 @@ def create_app(bot, loop) -> Flask:
     global public_url
 
     _app.config.from_mapping(
-        BASE_URL=f"{DOMAIN}/",
+        BASE_URL=f"{FLASK_DOMAIN}/",
         PREFERRED_URL_SCHEME="https",
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=5),
-        SECRET_KEY=SECRET_KEY,
+        SECRET_KEY=FLASK_SECRET_KEY,
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -93,7 +84,7 @@ def create_app(bot, loop) -> Flask:
         SESSION_TYPE="cachelib",
         SESSION_CACHELIB=FileSystemCache(threshold=250, cache_dir="flask_session"),
     )
-    public_url = f"{DOMAIN}/"
+    public_url = f"{FLASK_DOMAIN}/"
     _app.register_blueprint(app_wg_auth(bot, loop))
     oauth.init_app(_app)
     sess.init_app(_app)
@@ -165,8 +156,8 @@ def handle_custom_error(e):
 
 oauth.register(
     name="discord_std",
-    client_id=client_id,
-    client_secret=client_secret,
+    client_id=DISCORD_CLIENT_ID,
+    client_secret=DISCORD_CLIENT_SECRET,
     authorize_url="https://discord.com/api/oauth2/authorize",
     access_token_url="https://discord.com/api/oauth2/token",
     client_kwargs={
@@ -179,9 +170,10 @@ oauth.register(
 def wg_auth_link():
     """ASIAサーバー用認証リンクの生成"""
     discord_std = oauth.discord_std
-    redirect_uri = DOMAIN + f"/wg_link"
+    redirect_uri = FLASK_DOMAIN + f"/wg_link"
     url = discord_std.create_authorization_url(redirect_uri)
     return url["url"]
+
 
 def run_server(bot, loop):
     """サーバーの起動"""
@@ -195,5 +187,6 @@ def run_server(bot, loop):
     ctx.push()
     print("サーバー起動中")
     server_task = loop.create_task(
-        app.run_task(host="0.0.0.0", port=SERVICE_PORT, debug=False, shutdown_trigger=shutdown_event.wait))  # noqa
+        app.run_task(host="0.0.0.0", port=FLASK_SERVICE_PORT, debug=False,
+                     shutdown_trigger=shutdown_event.wait))  # noqa
     return

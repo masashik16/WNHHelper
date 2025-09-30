@@ -1,25 +1,12 @@
 from datetime import datetime
-import os
 
 import discord
 import pytz
 from discord.ext import commands
-from dotenv import load_dotenv
 
+from constant import GUILD_ID, CHANNEL_ID_MESSAGE_LOG, CHANNEL_ID_USER_LOG, COLOR_OK
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
-ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-CHANNEL_ID_MESSAGE_LOG = int(os.environ.get("CHANNEL_ID_MESSAGE_LOG"))
-CHANNEL_ID_USER_LOG = int(os.environ.get("CHANNEL_ID_USER_LOG"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("discord_event")
 JP = pytz.timezone("Asia/Tokyo")
 

@@ -1,24 +1,14 @@
-import os
 import time
 
 import discord
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
+from constant import ROLE_ID_WNH_STAFF, THREAD_ID_EVENT1, \
+    THREAD_ID_EVENT2, COLOR_OK, COLOR_ERROR
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-THREAD_ID_EVENT1 = int(os.environ.get("THREAD_ID_EVENT1"))
-THREAD_ID_EVENT2 = int(os.environ.get("THREAD_ID_EVENT2"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("event")
 
 """Event1の設定"""

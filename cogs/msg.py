@@ -1,33 +1,20 @@
-from datetime import datetime
 import io
-import os
 import re
+from datetime import datetime
 
 import discord
 import pytz
 from discord import app_commands
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import chat_exporter
 from bot import check_developer
+from constant import GUILD_ID, ROLE_ID_WNH_STAFF, ROLE_ID_SENIOR_MOD, ROLE_ID_MOD, ROLE_ID_WAIT_AGREE_RULE, \
+    ROLE_ID_WAIT_AUTH, COLOR_OK, COLOR_ERROR
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-ROLE_ID_SENIOR_MOD = int(os.environ.get("ROLE_ID_SENIOR_MOD"))
-ROLE_ID_MOD = int(os.environ.get("ROLE_ID_MOD"))
-ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
-ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("msg")
 JP = pytz.timezone("Asia/Tokyo")
 
@@ -136,7 +123,8 @@ class Message(commands.Cog):
             if type(interaction.channel) == discord.Thread:
                 thread = interaction.channel
             else:
-                thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得", message=thread_message)
+                thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得",
+                                                                 message=thread_message)
             # メッセージを転送
             for message in messages:
                 create_time = message.created_at.astimezone(JP)

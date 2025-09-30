@@ -1,14 +1,16 @@
 import discord
 from discord import app_commands, InteractionType
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
+
+from constant import COLOR_ERROR
+
 
 class FlaskCustomError(Exception):
-    def __init__(self, error_title: str, error_list: list, error_code: str, response_code:int):
+    def __init__(self, error_title: str, error_list: list, error_code: str, response_code: int):
         self.error_title = error_title
         self.error_list = error_list
         self.error_code = error_code
         self.response_code = response_code
+
 
 async def discord_error(name, interaction, error, logger):
     """コマンド実行時のエラー処理"""

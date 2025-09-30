@@ -1,4 +1,6 @@
-import os
+import re
+from datetime import datetime, timedelta
+
 import re
 from datetime import datetime, timedelta
 
@@ -7,29 +9,14 @@ import pytz
 from discord import app_commands
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import db
+from constant import GUILD_ID, ROLE_ID_WNH_STAFF, ROLE_ID_SENIOR_MOD, ROLE_ID_WAIT_AGREE_RULE, ROLE_ID_AUTHED, \
+    CHANNEL_ID_RULE, CHANNEL_ID_MOD_CASE, CHANNEL_ID_MOD_LOG, CHANNEL_ID_MOD_CONTACT_LOG, CHANNEL_ID_REPORT_LOG, \
+    ENV, COLOR_OK, COLOR_ERROR
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-ROLE_ID_SENIOR_MOD = int(os.environ.get("ROLE_ID_SENIOR_MOD"))
-ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-CHANNEL_ID_MOD_CASE = int(os.environ.get("CHANNEL_ID_MOD_CASE"))
-CHANNEL_ID_RULE = int(os.environ.get("CHANNEL_ID_RULE"))
-CHANNEL_ID_MOD_LOG = int(os.environ.get("CHANNEL_ID_MOD_LOG"))
-CHANNEL_ID_REPORT_LOG = int(os.environ.get("CHANNEL_ID_REPORT_LOG"))
-CHANNEL_ID_MOD_CONTACT_LOG = int(os.environ.get("CHANNEL_ID_MOD_CONTACT_LOG"))
-ENV = os.environ.get("ENV")
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("mod")
 JP = pytz.timezone("Asia/Tokyo")
 

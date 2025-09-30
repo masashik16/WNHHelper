@@ -1,25 +1,13 @@
-import os
-
 import discord
-from discord import app_commands, ui
+from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
 from api import wows_user_info
+from constant import ROLE_ID_WAIT_AGREE_RULE, ROLE_ID_WAIT_AUTH, ROLE_ID_AUTHED, COLOR_OK, COLOR_WARN
 from db import search_user
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
-ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("newbie_role")
 
 """コマンドの実装"""
@@ -71,6 +59,7 @@ class Rule(commands.Cog):
 
 class RuleMessageView(ui.LayoutView):
     """ルールメッセージの実装"""
+
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -138,6 +127,7 @@ class RuleMessageView(ui.LayoutView):
     async def rule_agree_button(self, interaction: discord.Interaction, button: ui.Button):
         await rule_agree_button_callback(interaction, button)
 
+
 async def rule_agree_button_callback(interaction: discord.Interaction, button: ui.Button):
     """ルール同意ボタン押下時の処理
 
@@ -201,6 +191,7 @@ async def rule_agree_button_callback(interaction: discord.Interaction, button: u
 
 class NoRoleMessageView(ui.LayoutView):
     """必要なロールが付与されていないユーザー向けメッセージ"""
+
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -211,9 +202,11 @@ class NoRoleMessageView(ui.LayoutView):
 
     action_row = ui.ActionRow()
 
-    @action_row.button(label="必要なロールを取得する", style=discord.ButtonStyle.green, custom_id="no_role_button")  # noqa
+    @action_row.button(label="必要なロールを取得する", style=discord.ButtonStyle.green,
+                       custom_id="no_role_button")  # noqa
     async def no_role_button(self, interaction: discord.Interaction, button: ui.Button):
         await no_role_button_callback(interaction, button)
+
 
 async def no_role_button_callback(interaction: discord.Interaction, button: ui.Button):
     """参加時ロール取得ボタン押下時の処理

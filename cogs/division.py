@@ -1,25 +1,15 @@
-import os
 import time
 
 import discord
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import db
 from bot import DISALLOW_MENTION
+from constant import ROLE_ID_DIVISION, CHANNEL_ID_DIVISION, COLOR_OK, COLOR_ERROR
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_DIVISION = int(os.environ.get("ROLE_ID_DIVISION"))
-CHANNEL_ID_DIVISION = int(os.environ.get("CHANNEL_ID_DIVISION"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("division")
 
 
@@ -51,6 +41,7 @@ class Division(commands.Cog):
 
 class DivisionView(ui.LayoutView):
     """分隊募集方法案内メッセージ"""
+
     def __init__(self) -> None:
         super().__init__(timeout=None)
 

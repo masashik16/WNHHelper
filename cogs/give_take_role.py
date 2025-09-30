@@ -1,24 +1,9 @@
 import datetime
-import os
 
 from discord.ext import commands, tasks
-from dotenv import load_dotenv
 
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-ROLE_ID_WAIT_AGREE_RULE = int(os.environ.get("ROLE_ID_WAIT_AGREE_RULE"))
-ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-ROLE_ID_MATTARI = int(os.environ.get("ROLE_ID_MATTARI"))
-ROLE_ID_GATSU = int(os.environ.get("ROLE_ID_GATSU"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("give_take_role")
 
 
