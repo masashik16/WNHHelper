@@ -1,49 +1,20 @@
 import io
-import os
 import time
 
 import discord
 from discord import app_commands
 from discord import ui
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import chat_exporter
-from bot import check_developer, DISALLOW_MENTION
+from bot import DISALLOW_MENTION
+from constant import GUILD_ID, ROLE_ID_WNH_STAFF, ROLE_ID_CLAN_RECRUITER, CHANNEL_ID_OPINION_LOG, GENERAL_INQUIRY_OPEN, \
+    GENERAL_INQUIRY_CLOSE, GENERAL_INQUIRY_LOG, GENERAL_INQUIRY_SAVE, REPORT_OPEN, REPORT_CLOSE, REPORT_LOG, REPORT_SAVE, \
+    CLAN_OPEN, CLAN_CLOSE, CLAN_LOG, CLAN_SAVE, CLAN_STAFF_ROLE, CLAN_MEET_ID, ENV, COLOR_OK, COLOR_ERROR, COLOR_WARN
 from db import get_inquiry_number
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-ROLE_ID_CLAN_RECRUITER = int(os.environ.get("ROLE_ID_CLAN_RECRUITER"))
-# ご意見・ご要望・その他問い合わせ
-OPINION_LOG = int(os.environ.get("OPINION_LOG"))
-GENERAL_INQUIRY_OPEN = int(os.environ.get("GENERAL_INQUIRY_OPEN"))
-GENERAL_INQUIRY_CLOSE = int(os.environ.get("GENERAL_INQUIRY_CLOSE"))
-GENERAL_INQUIRY_LOG = int(os.environ.get("GENERAL_INQUIRY_LOG"))
-GENERAL_INQUIRY_SAVE = int(os.environ.get("GENERAL_INQUIRY_SAVE"))
-# 通報
-REPORT_OPEN = int(os.environ.get("REPORT_OPEN"))
-REPORT_CLOSE = int(os.environ.get("REPORT_CLOSE"))
-REPORT_LOG = int(os.environ.get("REPORT_LOG"))
-REPORT_SAVE = int(os.environ.get("REPORT_SAVE"))
-# 公認クラン
-CLAN_OPEN = int(os.environ.get("CLAN_OPEN"))
-CLAN_CLOSE = int(os.environ.get("CLAN_CLOSE"))
-CLAN_LOG = int(os.environ.get("CLAN_LOG"))
-CLAN_SAVE = int(os.environ.get("CLAN_SAVE"))
-CLAN_STAFF_ROLE = int(os.environ.get("CLAN_STAFF_ROLE"))
-CLAN_MEET_ID = int(os.environ.get("CLAN_MEET_ID"))
-
-ENV = os.environ.get("ENV")
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("contact")
 COOLDOWN = commands.CooldownMapping.from_cooldown(1, 5, commands.BucketType.member)  # noqa
 DICT_CATEGORY = {GENERAL_INQUIRY_OPEN: "INQUIRY",
@@ -59,7 +30,7 @@ DICT_LOG_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_LOG, "REPORT": REPORT_LOG,
                      "CLAN": CLAN_LOG}
 DICT_SAVE_CATEGORY = {"INQUIRY": GENERAL_INQUIRY_SAVE, "REPORT": REPORT_SAVE,
                       "CLAN": CLAN_SAVE}
-import re
+
 
 class Contact(commands.Cog):
     """コマンド実装用のクラス"""
@@ -78,7 +49,6 @@ class Contact(commands.Cog):
         # ログの保存
         logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                     f"がコマンド「{interaction.command.name}」を使用しました。")
-
 
     @app_commands.command(description="チケットクローズ案内_通常")
     @app_commands.checks.has_role(ROLE_ID_WNH_STAFF)
@@ -110,6 +80,7 @@ class Contact(commands.Cog):
 
 class CreateTicketView(ui.LayoutView):
     """問い合わせ用メッセージ"""
+
     def __init__(self) -> None:
         super().__init__(timeout=None)
 
@@ -232,6 +203,7 @@ async def set_channel_button_callback(interaction: discord.Interaction, select: 
 
 class OpinionView(ui.LayoutView):
     """ご意見・ご要望の運営チームへの送信用メッセージ"""
+
     def __init__(self, user, content) -> None:
         super().__init__(timeout=None)
 
@@ -266,7 +238,7 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
         """フォーム送信時の処理"""
         await interaction.response.defer(ephemeral=True)  # noqa
         # ギルドとチャンネルの取得
-        channel_inquiry = await interaction.guild.fetch_channel(OPINION_LOG)
+        channel_inquiry = await interaction.guild.fetch_channel(CHANNEL_ID_OPINION_LOG)
         # フォームを送信したユーザーの情報を取得
         user = interaction.user
         # 分隊募集メッセージ（Embed）の作成
@@ -290,6 +262,7 @@ class InquiryForm(ui.Modal, title="ご意見・ご要望"):
 
 class ClanButton(ui.ActionRow):
     """クランリクルーター問い合わせのチケット初期メッセージに付属するボタン"""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -314,6 +287,7 @@ class ClanButton(ui.ActionRow):
 
 class ClanTicketView(ui.LayoutView):
     """クランリクルーター問い合わせのチケット初期メッセージ"""
+
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -346,6 +320,7 @@ class ClanTicketView(ui.LayoutView):
 
 class CloseButton(ui.ActionRow):
     """クランリクルーター問い合わせ以外のチケット初期メッセージに付属するボタン"""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -356,6 +331,7 @@ class CloseButton(ui.ActionRow):
 
 class GeneralTicketView(ui.LayoutView):
     """一般的な問い合わせのチケット初期メッセージ"""
+
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -377,6 +353,7 @@ class GeneralTicketView(ui.LayoutView):
 
 class ReportTicketView(ui.LayoutView):
     """通報のチケット初期メッセージ"""
+
     def __init__(self, user=None) -> None:
         super().__init__(timeout=None)
         if user is not None:
@@ -606,6 +583,7 @@ async def ticket_save_button_callback(interaction: discord.Interaction, button: 
                               colour=COLOR_OK)
         await interaction.channel.send(embed=embed)  # noqa
 
+
 async def ticket_delete_button_callback(interaction: discord.Interaction, button: ui.Button):
     """チケット削除ボタンの処理
 
@@ -645,8 +623,8 @@ async def ticket_delete_button_callback(interaction: discord.Interaction, button
         # チケットの削除
         time.sleep(3)
         await interaction.channel.delete()
-    
-    
+
+
 class ClanForm(ui.Modal, title="面談希望日時　申請フォーム"):
     """リクルーター面談日時申請フォーム"""
 

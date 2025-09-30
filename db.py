@@ -1,15 +1,6 @@
-import os
-
 import aiomysql
-from dotenv import load_dotenv
 
-env_path = os.path.join(os.path.dirname(__file__), './.env')
-load_dotenv(env_path, override=True)
-DB_HOST = os.environ.get("DB_HOST")
-DB_PORT = int(os.environ.get("DB_PORT"))
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
-DB_NAME = os.environ.get("DB_NAME")
+from constant import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
 
 
 async def add_user(discord_id: int, account_id: str, region: str):
@@ -310,5 +301,3 @@ async def get_inquiry_number(category: str):
     await db_cur.close()
     db_connect.close()
     return new_number
-
-

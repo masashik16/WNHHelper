@@ -1,27 +1,16 @@
 import asyncio
-import os
 import re
 
-import requests
 from authlib.integrations.requests_client import OAuth2Session
-from dotenv import load_dotenv
 from flask import Blueprint, request, redirect, session
 
 import api
 import db
+from constant import FLASK_DOMAIN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
 from exception import FlaskCustomError
 from openid_wargaming.authentication import Authentication
 from openid_wargaming.verification import Verification
 
-load_dotenv()
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-SERVICE_PORT = int(os.environ.get("SERVICE_PORT"))
-DOMAIN = os.environ.get("DOMAIN")
-
-client_id = os.environ.get("DISCORD_CLIENT_ID")
-client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
-GAS_KEY = os.environ.get("GAS_KEY")
-SECRET_KEY = os.environ.get("SECRET_KEY")
 loop = asyncio.get_event_loop()
 
 
@@ -30,9 +19,9 @@ def construct_blueprint(bot, loop):
 
     @app_wg_auth.route("/wg_link", methods=["GET"])
     def wg_link():
-        redirect_uri = DOMAIN + request.path
+        redirect_uri = FLASK_DOMAIN + request.path
         state = request.args.get("state")
-        discord_std = OAuth2Session(client_id, client_secret, state=state, redirect_uri=redirect_uri)
+        discord_std = OAuth2Session(DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, state=state, redirect_uri=redirect_uri)
         token = discord_std.fetch_token("https://discord.com/api/oauth2/token", authorization_response=request.url)
         access_token = token.get("access_token")
         if access_token is None:
@@ -42,7 +31,7 @@ def construct_blueprint(bot, loop):
         userinfo_json = userinfo_request.json()
         discord_id = userinfo_json["id"]
         session["discord_id"] = discord_id
-        return_to = f"{DOMAIN}/wg_auth"
+        return_to = f"{FLASK_DOMAIN}/wg_auth"
         auth = Authentication(return_to=return_to)
         url = asyncio.run_coroutine_threadsafe(auth.authenticate(f"https://wargaming.net/id/openid/"),
                                                loop).result()  # noqa
@@ -97,7 +86,5 @@ def construct_blueprint(bot, loop):
                     f"<h2 align=\"center\">サーバー：{region} / IGN：{nickname}"
                     f"<br>上記のアカウントがメインアカウントではない場合や情報が異なる場合はお問い合わせください。"
                     f"<br>一致している場合はこの画面を閉じてください。</h2>")
-
-
 
     return app_wg_auth

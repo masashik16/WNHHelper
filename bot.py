@@ -6,16 +6,14 @@ import time
 
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
 
 import db
+from constant import DISCORD_TOKEN
+from constant import GUILD_ID
 from logs import handler, logger
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
-load_dotenv()
-TOKEN = os.environ.get("DISCORD_TOKEN")
-GUILD_ID = int(os.environ.get("GUILD_ID"))
 # 接続に必要なオブジェクトを生成
 MY_GUILD = discord.Object(id=GUILD_ID)
 DISALLOW_MENTION = discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False)
@@ -62,7 +60,6 @@ class MyBot(commands.Bot):
         logger.info("接続しました")
         print("接続しました")
 
-
     async def on_thread_create(self, thread):
         if thread.parent_id == 1054002378984149003:
             action_datetime = time.time()
@@ -72,10 +69,10 @@ class MyBot(commands.Bot):
 # botのインスタンス化、および、起動処理
 if __name__ == "__main__":
     from server import run_server
+
     bot = MyBot()
     discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
     loop = asyncio.get_event_loop()
-    loop.create_task(bot.start(TOKEN))
+    loop.create_task(bot.start(DISCORD_TOKEN))
     run_server(bot, loop)
     loop.run_forever()
-

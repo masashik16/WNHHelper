@@ -1,26 +1,14 @@
-import os
 import re
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from dotenv import load_dotenv
 
 from bot import check_developer
+from constant import GUILD_ID, COLOR_OK, COLOR_ERROR
 from exception import discord_error
 from logs import logger
 
-env_path = os.path.join(os.path.dirname(__file__), '../.env')
-load_dotenv(env_path, override=True)
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-ROLE_ID_ADMIN = int(os.environ.get("ROLE_ID_ADMIN"))
-ROLE_ID_WNH_STAFF = int(os.environ.get("ROLE_ID_WNH_STAFF"))
-ROLE_ID_AUTHED = int(os.environ.get("ROLE_ID_AUTHED"))
-ROLE_ID_WAIT_AUTH = int(os.environ.get("ROLE_ID_WAIT_AUTH"))
-CHANNEL_ID_RULE = int(os.environ.get("CHANNEL_ID_RULE"))
-COLOR_OK = 0x00ff00
-COLOR_WARN = 0xffa500
-COLOR_ERROR = 0xff0000
 logger = logger.getChild("cmd2")
 
 
