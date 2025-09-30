@@ -93,7 +93,7 @@ DB_NAME = os.environ.get("DB_NAME")
 
 
 # Flask Port
-FLASK_SERVICE_PORT=int(os.environ.get("SERVICE_PORT"))
+FLASK_SERVICE_PORT=int(os.environ.get("FLASK_SERVICE_PORT"))
 # Flask Domain
 FLASK_DOMAIN=os.environ.get("FLASK_DOMAIN")
 # Flask Secret Key
