@@ -64,7 +64,6 @@ async def wows_user_info(account_id, region):
               "fields": "account_id, hidden_profile, nickname, statistics.pvp.battles"}
     res = requests.get(url, params=params)
     data = json.loads(res.text)
-    print(data)
     user = data["data"][account_id]
     if user is None:
         nickname = "ERROR"
