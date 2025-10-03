@@ -947,23 +947,15 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
                 await thread.send(self.member.mention)
                 await thread.send(embed=dm_embed, view=ModContactButton())
         # コマンドへのレスポンス
-        # 警告後の累計ポイントが1ポイントのため、追加処罰なし
-        if new_point == 1:
-            response_embed = discord.Embed(description="ℹ️ 警告を発行しました", color=COLOR_OK)
-            await interaction.followup.send(embed=response_embed, ephemeral=True)
-            # ログの保存
-            logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
-                        f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
-                        f"に警告（{point}ポイント）を発行しました。")
-        # 警告後の累計ポイントが5ポイント以上のためBAN
-        elif new_point >= 5:
+        # 警告後の累計ポイントが4ポイント以上のためBAN
+        elif new_point >= 4:
             await auto_ban(interaction=interaction, base_case_id=case_id, member=self.member,
                            base_thread_id=log.thread.id)  # noqa
             # ログの保存
             logger.info(f"{interaction.user.display_name}（UID：{interaction.user.id}）"
                         f"がフォーム「ユーザーを警告」を使用し、ユーザー：{self.member.display_name}（UID：{self.member.id}）"
                         f"に警告（{point}ポイント）を発行しました。")
-        # 警告後の累計ポイントが2～4ポイントのため一定期間発言禁止
+        # 警告後の累計ポイントが1～3ポイントのため一定期間発言禁止
         else:
             await auto_timeout(interaction=interaction, base_case_id=case_id, member=self.member, point=new_point,
                                base_thread_id=log.thread.id)  # noqa
@@ -1239,9 +1231,9 @@ async def auto_timeout(interaction: discord.Interaction, base_case_id: int, memb
                        base_thread_id: int):
     """一定ポイント到達時の自動発言禁止処理"""
     # ポイントに応じて期間を設定
-    if point == 2:
+    if point == 1:
         length = 7
-    elif point == 3:
+    elif point == 2:
         length = 14
     else:
         length = 28
