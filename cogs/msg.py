@@ -120,7 +120,7 @@ class Message(commands.Cog):
             dt_str = dt.strftime("%Y/%m/%d %H:%M")
             # DM履歴転送先のスレッドを作成（コマンドが実行されたCHがスレッドの場合は自身を選択）
             thread_message = await interaction.channel.send(f"DM履歴 - {user.mention} - {dt_str}取得")
-            if type(interaction.channel) == discord.Thread:
+            if isinstance(interaction.channel, discord.Thread):
                 thread = interaction.channel
             else:
                 thread = await interaction.channel.create_thread(name=f"DM履歴 - {user.display_name} - {dt_str}取得",

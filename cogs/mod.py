@@ -948,7 +948,7 @@ class WarnUserForm(ui.Modal, title="ユーザーに警告"):
                 await thread.send(embed=dm_embed, view=ModContactButton())
         # コマンドへのレスポンス
         # 警告後の累計ポイントが4ポイント以上のためBAN
-        elif new_point >= 4:
+        if new_point >= 4:
             await auto_ban(interaction=interaction, base_case_id=case_id, member=self.member,
                            base_thread_id=log.thread.id)  # noqa
             # ログの保存
